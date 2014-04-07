@@ -13,7 +13,7 @@ can take several values.
 works like printf like arguments, e.g:  %04d, which indicates you want the variable
 to match only numbers with 4 prepending zeroes.
 
-- ### : Same as %d but the number of "#" character indicates how many digits the number
+- \#\#\# : Same as %d but the number of "#" character indicates how many digits the number
 should be.
 
 - %v: indicates that a short view name should be present instead of the variable. 
