@@ -36,7 +36,7 @@
  78153 Le Chesnay Cedex - France
  
  */
-#include "SequenceParser.h"
+#include "SequenceParsing.h"
 
 #include <cassert>
 #include <iostream>
