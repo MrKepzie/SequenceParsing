@@ -39,6 +39,7 @@
 #include "SequenceParsing.h"
 
 #include <cassert>
+#include <climits>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
