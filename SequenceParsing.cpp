@@ -225,8 +225,8 @@ static bool endsWith(const std::string &str, const std::string &suffix)
 static void removeAllOccurences(std::string& str,const std::string& toRemove,bool caseSensitive = false)
 {
     if (str.size()) {
-        int i = 0;
-        while ((findStr(str, toRemove, i,caseSensitive) != std::string::npos)) {
+        size_t i = 0;
+        while ((i = findStr(str, toRemove, i,caseSensitive) != std::string::npos)) {
             str.erase(i,toRemove.size());
         }
     }
