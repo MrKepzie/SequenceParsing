@@ -1354,7 +1354,7 @@ bool SequenceFromFiles::tryInsertFile(const FileNameContent& file) {
 }
 
 bool SequenceFromFiles::contains(const std::string& absoluteFileName) const {
-    return std::find(_imp->filesList.begin(),_imp->filesList.end(),absoluteFileName) == _imp->filesList.end();
+    return std::find(_imp->filesList.begin(),_imp->filesList.end(),absoluteFileName) != _imp->filesList.end();
 }
 
 bool SequenceFromFiles::empty() const {
