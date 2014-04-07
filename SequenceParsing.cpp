@@ -411,7 +411,7 @@ static bool matchesPattern(const std::string& filename,const StringList& commonP
     ///initialize the view number
     *viewNumber = -1;
 
-    size_t lastPartPos = std::string::npos;
+    size_t lastPartPos = -1;
     for (size_t i = 0; i < commonPartsOrdered.size(); ++i) {
 #pragma message WARN("This line will match common parts that could be longer,e.g: marleen would match marleenBG ")
         size_t pos = findStr(filename, commonPartsOrdered[i], lastPartPos == std::string::npos ? 0 : lastPartPos,true);
