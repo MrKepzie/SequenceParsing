@@ -226,7 +226,7 @@ static void removeAllOccurences(std::string& str,const std::string& toRemove,boo
 {
     if (str.size()) {
         size_t i = 0;
-        while ((i = findStr(str, toRemove, i,caseSensitive) != std::string::npos)) {
+        while ((i = findStr(str, toRemove, i,caseSensitive)) != std::string::npos) {
             str.erase(i,toRemove.size());
         }
     }
