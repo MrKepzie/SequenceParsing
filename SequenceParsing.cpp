@@ -1195,7 +1195,7 @@ std::string generateFileNameFromPattern(const std::string& pattern,int frameNumb
             int digitsCount = stringToInt(digitsCountStr);
             std::string frameNoStr = stringFromInt(frameNumber);
             //prepend with extra 0's
-            while (frameNoStr.size() < (int)digitsCount) {
+            while ((int)frameNoStr.size() < digitsCount) {
                 frameNoStr.insert(0,1,'0');
             }
             output.replace(lastVariablePos, variable.size(), frameNoStr);
