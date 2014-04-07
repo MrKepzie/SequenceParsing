@@ -1167,7 +1167,7 @@ std::string generateFileNameFromPattern(const std::string& pattern,int frameNumb
                 frameNoStr.insert(0,1,'0');
             }
             output.replace(lastVariablePos, variable.size(), frameNoStr);
-        } else if (variable.find_first_of("%v") != std::string::npos) {
+        } else if (variable.find("%v") != std::string::npos) {
             std::string viewNumberStr;
             if (viewNumber == 0) {
                 viewNumberStr = "l";
@@ -1178,7 +1178,7 @@ std::string generateFileNameFromPattern(const std::string& pattern,int frameNumb
             }
 
             output.replace(lastVariablePos,variable.size(), viewNumberStr);
-        } else if (variable.find_first_of("%V") != std::string::npos) {
+        } else if (variable.find("%V") != std::string::npos) {
             std::string viewNumberStr;
             if (viewNumber == 0) {
                 viewNumberStr = "left";
