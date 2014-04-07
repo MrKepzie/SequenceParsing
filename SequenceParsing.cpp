@@ -47,6 +47,7 @@
 #include <fstream>
 #include <locale>
 #include <istream>
+#include <algorithm>
 
 
 #include "tinydir/tinydir.h"
