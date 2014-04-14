@@ -498,15 +498,6 @@ static bool matchesPattern(const std::string& filename,const StringList& commonP
                 bool startsWithRight = startsWith(mid,"right");
                 bool startsWithView = startsWith(mid,"view");
 
-                char previousChar;
-                if (i > 0) {
-                    previousChar = filename.at(i-1);
-                }
-                char nextChar;
-                if (i < (int)filename.size() -1) {
-                    nextChar = filename.at(i+1);
-                }
-
                 if (startsWith(mid,"l") && !startsWithLeft) {
 
                     ///don't be so harsh with just short views name because the letter
