@@ -721,7 +721,7 @@ void FileNameContentPrivate::parse(const std::string& absoluteFileName) {
     std::string lastTextPart;
     while (i < (int)filename.size()) {
         const char& c = filename.at(i);
-        if (std::isdigit(c)) {
+        if (std::isdigit(c,std::locale())) {
             lastNumberStr += c;
             if (!lastTextPart.empty()) {
                 orderedElements.push_back(FileNameElement(lastTextPart,FileNameElement::TEXT));
@@ -999,7 +999,7 @@ bool FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<
 
             ///assert that the end of the tag is composed of  a digit
             if (endTagPos < (int)indexedPattern.size()) {
-                assert(std::isdigit(indexedPattern.at(endTagPos)));
+                assert(std::isdigit(indexedPattern.at(endTagPos),std::locale()));
             }
 
             bool isNumberAFrameNumber = false;
