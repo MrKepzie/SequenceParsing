@@ -149,7 +149,7 @@ static bool extractCommonPartsAndVariablesFromPattern(const std::string& pattern
             variable.push_back(c);
             ///if we're after a % character, and c is a letter different than d or v or V
             ///or c is digit different than 0, then we don't support this printf like style.
-            if (std::isalpha(c) ||
+            if (std::isalpha(c,std::locale()) ||
                     (printfLikeArgIndex == 1 && c != '0')) {
                 commonParts->push_back(variable);
                 commonCharactersFound += variable.size();
@@ -458,7 +458,7 @@ static bool matchesPattern(const std::string& filename,const StringList& commonP
 
     while (i < (int)filename.size()) {
         const char& c = filename.at(i);
-        if (std::isdigit(c)) {
+        if (std::isdigit(c,std::locale())) {
 
             assert((!previousCharIsDigit && variable.empty()) || previousCharIsDigit);
             previousCharIsDigit = true;
@@ -490,7 +490,7 @@ static bool matchesPattern(const std::string& filename,const StringList& commonP
                 variable.clear();
             }
 
-            char clower = std::tolower(c);
+            char clower = std::tolower(c,std::locale());
             ///these are characters that trigger a view name, start looking for a view name
             if(clower == 'l' || clower == 'r'  || clower == 'v') {
                 std::string mid = filename.substr(i);
@@ -582,7 +582,7 @@ static bool matchesPattern(const std::string& filename,const StringList& commonP
                     variable += "view";
                     std::string viewNumberStr;
                     int j = 4;
-                    while (j < (int)mid.size() && std::isdigit(mid.at(j))) {
+                    while (j < (int)mid.size() && std::isdigit(mid.at(j),std::locale())) {
                         viewNumberStr.push_back(mid.at(j));
                         ++j;
                     }
