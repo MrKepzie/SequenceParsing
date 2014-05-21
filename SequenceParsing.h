@@ -123,7 +123,7 @@ public:
          * function return false. Otherwise it returns true.
          * The pattern will have its file path prepended so it is absolute.
          **/
-    bool generatePatternWithFrameNumberAtIndexes(const std::vector<int>& indexes,std::string* pattern) const;
+    void generatePatternWithFrameNumberAtIndexes(const std::vector<int>& indexes,std::string* pattern) const;
 
     /**
          * @brief If the filename is composed of several numbers (e.g: file08_001.png),

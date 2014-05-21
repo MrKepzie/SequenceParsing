@@ -983,7 +983,7 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
 
 }
 
-bool FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<int>& indexes,std::string* pattern) const {
+void FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<int>& indexes,std::string* pattern) const {
     int numbersCount = 0;
     size_t lastNumberPos = 0;
     std::string indexedPattern = getFilePattern();
@@ -1025,15 +1025,7 @@ bool FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<
         }
     }
 
-    for (unsigned int i = 0; i < indexes.size(); ++i) {
-        ///check that all index is valid.
-        if (indexes[i] >= numbersCount) {
-            return false;
-        }
-    }
-
     *pattern = getPath() + indexedPattern;
-    return true;
 }
 
 
