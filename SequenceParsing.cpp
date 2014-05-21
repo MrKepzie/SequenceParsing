@@ -401,6 +401,266 @@ static bool checkVariable(const std::string& variableToken,const std::string& va
     }
 }
 
+static bool matchesHashTag(int sharpCount,const std::string& filename,size_t startingPos,size_t *endPos,int* frameNumber)
+{
+    std::string variable;
+    size_t variableIt = 0;
+    while (variableIt < filename.size() && std::isdigit(variableIt.at(variableIt),std::locale())) {
+        variable.append(variableIt.at(variableIt));
+         ++variableIt;
+    }
+    *endPos = variableIt;
+
+    if ((int)variable.size() < sharpCount) {
+        return false;
+    }
+
+    int prepending0s = 0;
+    int i = 0;
+    while (i < (int)variable.size()) {
+        if (variable.at(i) != '0') {
+            break;
+        } else {
+            ++prepending0s;
+        }
+        ++i;
+    }
+
+    ///extra padding on numbers bigger than the hash chars count are not allowed.
+    if ((int)variable.size() > sharpCount && prepending0s > 0) {
+        return false;
+    }
+
+    *frameNumber = stringToInt(variable);
+
+}
+
+static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
+                                    size_t startingPos,size_t *endPos,int* frameNumber) {
+
+    std::string variable;
+    size_t variableIt = 0;
+    while (variableIt < filename.size() && std::isdigit(variableIt.at(variableIt),std::locale())) {
+        variable.append(variableIt.at(variableIt));
+         ++variableIt;
+    }
+    *endPos = variableIt;
+
+    if ((int)variable.size() < digitsCount) {
+        return false;
+    }
+
+    int prepending0s = 0;
+    int i = 0;
+    while (i < (int)variable.size()) {
+        if (variable.at(i) != '0') {
+            break;
+        } else {
+            ++prepending0s;
+        }
+        ++i;
+    }
+
+    ///extra padding on numbers bigger than the hash chars count are not allowed.
+    if ((int)variable.size() > digitsCount && prepending0s > 0) {
+        return false;
+    }
+
+    *frameNumber = stringToInt(variable);
+}
+
+static bool matchesView(bool longView,const std::string& filename,
+                                    size_t startingPos,size_t *endPos,int* viewNumber) {
+
+    std::string mid = filename.substr(startingPos);
+    if (!longView) {
+
+        if (startsWith(mid,"r")) {
+            *viewNumber = 1;
+            *endPos = startingPos + 1;
+            return true;
+        } else if (startsWith(mid,"l")) {
+            *viewNumber = 0;
+            *endPos = startingPos + 1;
+            return true;
+        } else if (startsWith(mid,"view")) {
+            size_t it = 4;
+            std::string viewNoStr;
+            while (it < mid.size() && std::isdigit(mid.at(it),std::locale())) {
+                viewNoStr.append(mid.at(it));
+                ++it;
+            }
+            if (!viewNoStr.empty()) {
+                *viewNumber = stringToInt(viewNoStr);
+                *endPos = startingPos + 4 + viewNoStr.size();
+            } else {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    } else {
+        if (startsWith(mid,"right")) {
+            *viewNumber = 1;
+            *endPos = startingPos + 5;
+            return true;
+        } else if (startsWith(mid,"left")) {
+            *viewNumber = 0;
+            *endPos = startingPos + 4;
+            return true;
+        } else if (startsWith(mid,"view")) {
+            size_t it = 4;
+            std::string viewNoStr;
+            while (it < mid.size() && std::isdigit(mid.at(it),std::locale())) {
+                viewNoStr.append(mid.at(it));
+                ++it;
+            }
+
+            if (!viewNoStr.empty()) {
+                *viewNumber = stringToInt(viewNoStr);
+                *endPos = startingPos + 4 + viewNoStr.size();
+            } else {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+}
+
+static bool matchesPattern_v2(const std::string& filename,const std::string& pattern,int* frameNumber,int* viewNumber)
+{
+    bool wasFrameNumberSet = false;
+    bool wasViewNumberSet = false;
+
+    *viewNumber = -1;
+    *frameNumber = -1;
+
+    size_t filenameIt = 0;
+    size_t patternIt = 0;
+    while (filenameIt < filename.size() && patternIt < pattern.size())
+    {
+
+        int sharpCount = 0;
+        size_t sharpIt = patternIt;
+        std::string variable;
+        while (sharpIt < pattern.size() && pattern.at(sharpIt) == '#') {
+            ++sharpIt;
+            ++sharpCount;
+            variable.append('#');
+        }
+
+        bool foundPrintFLikeSyntax = false;
+        bool foundShortView = false;
+        bool foundLongView = false;
+        int printfDigitCount = 0;
+        if (pattern.at(patternIt) == '%')
+        {
+
+            size_t printfIt = patternIt + 1;
+            std::string digitStr;
+            while (printfIt < pattern.size() && std::isdigit(pattern.at(printfIt),std::locale()))
+            {
+                digitStr.append(pattern.at(printfIt));
+                ++printfIt;
+            }
+            if (printfIt < pattern.size() && std::tolower(pattern.at(printfIt),std::locale()) == 'd') {
+                foundPrintFLikeSyntax = true;
+                printfDigitCount = stringToInt(digitStr);
+            } else if (printfIt < pattern.size() && pattern.at(printfIt) == 'V') {
+                foundLongView = true;
+            } else if (printfIt < pattern.size() && pattern.at(printfIt) == 'v') {
+                foundShortView = true;
+            }
+        }
+
+        if (sharpCount > 0)
+        {
+            assert(!foundPrintFLikeSyntax && !foundLongView && !foundShortView);
+            size_t endHashTag;
+            int fNumber;
+            if (!matchesHashTag(sharpCount,filename,filenameIt,&endHashTag,&fNumber)) {
+                return false;
+            }
+            if (wasFrameNumberSet && fNumber != frameNumber) {
+                return false;
+            }
+
+            wasFrameNumberSet = true;
+            *frameNumber = fNumber;
+
+            filenameIt = endHashTag;
+            patternIt += sharpCount;
+
+        } else if (foundPrintFLikeSyntax) {
+            assert(sharpCount == 0 && !foundLongView && !foundShortView);
+
+            size_t endPrintfLike;
+            int fNumber;
+            if (!matchesPrintfLikeSyntax(printfDigitCount,filename,filenameIt,&endPrintfLike,&fNumber)) {
+                return false;
+            }
+            if (wasFrameNumberSet && fNumber != *frameNumber) {
+                return false;
+            }
+
+            wasFrameNumberSet = true;
+            *frameNumber = fNumber;
+
+            filenameIt = endPrintfLike;
+            patternIt += printfDigitCount;
+
+
+        } else if (foundLongView) {
+            assert(sharpCount == 0 && !foundPrintFLikeSyntax && !foundShortView);
+
+            size_t endVar;
+            int vNumber;
+            if (!matchesView(true,filename,filenameIt,&endVar,&vNumber)) {
+                return false;
+            }
+            if (wasViewNumberSet && vNumber != *viewNumber) {
+                return false;
+            }
+
+            wasViewNumberSet = true;
+            *viewNumber = vNumber;
+
+            filenameIt = endVar;
+            patternIt += 2;
+
+
+        } else if (foundShortView) {
+            assert(sharpCount == 0 && !foundPrintFLikeSyntax && !foundLongView);
+
+            size_t endVar;
+            int vNumber;
+            if (!matchesView(false,filename,filenameIt,&endVar,&vNumber)) {
+                return false;
+            }
+            if (wasViewNumberSet && vNumber != *viewNumber) {
+                return false;
+            }
+
+            wasViewNumberSet = true;
+            *viewNumber = vNumber;
+
+            filenameIt = endVar;
+            patternIt += 2;
+        } else {
+            ///we found nothing, just compare the characters without case sensitivity
+            if (std::tolower(pattern.at(patternIt),std::locale()) != std::tolower(filename.at(filenameIt),std::locale())) {
+                return false;
+            }
+            ++patternIt;
+            ++filenameIt;
+        }
+
+
+    }
+    return true;
+}
+
 /**
      * @brief Tries to match a given filename with the common parts and the variables of a pattern.
      * Note that if 2 variables have the exact same meaning (e.g: ### and %04d) and they do not correspond to the
@@ -1078,13 +1338,13 @@ bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFr
         return false;
     }
 
-    ///this list represents the common parts of the filename to find in a file in order for it to match the pattern.
-    StringList commonPartsToFind;
-    ///this list represents the variables ( ###  %04d %v etc...) found in the pattern ordered from left to right in the
-    ///original string.
-    std::vector< std::pair<std::string,int> > variablesByOrder;
+//    ///this list represents the common parts of the filename to find in a file in order for it to match the pattern.
+//    StringList commonPartsToFind;
+//    ///this list represents the variables ( ###  %04d %v etc...) found in the pattern ordered from left to right in the
+//    ///original string.
+//    std::vector< std::pair<std::string,int> > variablesByOrder;
 
-    extractCommonPartsAndVariablesFromPattern(patternUnPathed, patternExtension, &commonPartsToFind, &variablesByOrder);
+//    extractCommonPartsAndVariablesFromPattern(patternUnPathed, patternExtension, &commonPartsToFind, &variablesByOrder);
 
 
     ///all the interesting files of the pattern directory
@@ -1095,7 +1355,8 @@ bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFr
     for (int i = 0; i < (int)files.size(); ++i) {
         int frameNumber;
         int viewNumber;
-        if (matchesPattern(files.at(i), commonPartsToFind, variablesByOrder, &frameNumber, &viewNumber)) {
+        if (matchesPattern_v2(files.at(i),patternUnPathed,&frameNumber,&viewNumber)) {
+        //if (matchesPattern(files.at(i), commonPartsToFind, variablesByOrder, &frameNumber, &viewNumber)) {
             SequenceFromPattern::iterator it = sequence->find(frameNumber);
             std::string absoluteFileName = patternPath + files.at(i);
             if (it != sequence->end()) {
