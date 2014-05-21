@@ -1327,13 +1327,13 @@ bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFr
 
     std::string patternUnPathed = pattern;
     std::string patternPath = removePath(patternUnPathed);
-    std::string patternExtension = removeFileExtension(patternUnPathed);
+    //std::string patternExtension = removeFileExtension(patternUnPathed);
 
-    ///the pattern has no extension, switch the extension and the unpathed part
-    if (patternUnPathed.empty()) {
-        patternUnPathed = patternExtension;
-        patternExtension.clear();
-    }
+//    ///the pattern has no extension, switch the extension and the unpathed part
+//    if (patternUnPathed.empty()) {
+//        patternUnPathed = patternExtension;
+//        patternExtension.clear();
+//    }
 
     tinydir_dir patternDir;
     if (tinydir_open(&patternDir, patternPath.c_str()) == -1) {
