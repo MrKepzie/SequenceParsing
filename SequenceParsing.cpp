@@ -404,7 +404,7 @@ static bool checkVariable(const std::string& variableToken,const std::string& va
 static bool matchesHashTag(int sharpCount,const std::string& filename,size_t startingPos,size_t *endPos,int* frameNumber)
 {
     std::string variable;
-    size_t variableIt = 0;
+    size_t variableIt = startingPos;
     while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),std::locale())) {
         variable.push_back(filename.at(variableIt));
          ++variableIt;
@@ -440,7 +440,7 @@ static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
                                     size_t startingPos,size_t *endPos,int* frameNumber) {
 
     std::string variable;
-    size_t variableIt = 0;
+    size_t variableIt = startingPos;
     while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),std::locale())) {
         variable.push_back(filename.at(variableIt));
          ++variableIt;
