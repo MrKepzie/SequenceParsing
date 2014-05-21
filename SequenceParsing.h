@@ -133,6 +133,12 @@ public:
          **/
     bool getNumberByIndex(int index,std::string* numberString) const;
 
+    /**
+      * @brief Returns the number of potential frame numbers the filename is composed of.
+      * e.g: file08_001.png would return 2.
+    **/
+    int getPotentialFrameNumbersCount() const;
+
 
     /**
          * @brief Given the pattern of this file, it tries to match the other file name to this
