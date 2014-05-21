@@ -1,24 +1,24 @@
 /*
  SequenceParser is a small class that helps reading a sequence of images within a directory.
 
- 
+
  Copyright (C) 2013 INRIA
  Author Alexandre Gauthier-Foichat alexandre.gauthier-foichat@inria.fr
- 
+
  Redistribution and use in source and binary forms, with or without modification,
  are permitted provided that the following conditions are met:
- 
+
  Redistributions of source code must retain the above copyright notice, this
  list of conditions and the following disclaimer.
- 
+
  Redistributions in binary form must reproduce the above copyright notice, this
  list of conditions and the following disclaimer in the documentation and/or
  other materials provided with the distribution.
- 
+
  Neither the name of the {organization} nor the names of its
  contributors may be used to endorse or promote products derived from
  this software without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,12 +29,12 @@
  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- 
+
  INRIA
  Domaine de Voluceau
  Rocquencourt - B.P. 105
  78153 Le Chesnay Cedex - France
- 
+
  */
 #include "SequenceParsing.h"
 
@@ -405,8 +405,8 @@ static bool matchesHashTag(int sharpCount,const std::string& filename,size_t sta
 {
     std::string variable;
     size_t variableIt = 0;
-    while (variableIt < filename.size() && std::isdigit(variableIt.at(variableIt),std::locale())) {
-        variable.append(variableIt.at(variableIt));
+    while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),std::locale())) {
+        variable.push_back(filename.at(variableIt));
          ++variableIt;
     }
     *endPos = variableIt;
@@ -432,6 +432,7 @@ static bool matchesHashTag(int sharpCount,const std::string& filename,size_t sta
     }
 
     *frameNumber = stringToInt(variable);
+    return true;
 
 }
 
@@ -440,8 +441,8 @@ static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
 
     std::string variable;
     size_t variableIt = 0;
-    while (variableIt < filename.size() && std::isdigit(variableIt.at(variableIt),std::locale())) {
-        variable.append(variableIt.at(variableIt));
+    while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),std::locale())) {
+        variable.push_back(filename.at(variableIt));
          ++variableIt;
     }
     *endPos = variableIt;
@@ -467,6 +468,7 @@ static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
     }
 
     *frameNumber = stringToInt(variable);
+    return true;
 }
 
 static bool matchesView(bool longView,const std::string& filename,
@@ -487,7 +489,7 @@ static bool matchesView(bool longView,const std::string& filename,
             size_t it = 4;
             std::string viewNoStr;
             while (it < mid.size() && std::isdigit(mid.at(it),std::locale())) {
-                viewNoStr.append(mid.at(it));
+                viewNoStr.push_back(mid.at(it));
                 ++it;
             }
             if (!viewNoStr.empty()) {
@@ -512,7 +514,7 @@ static bool matchesView(bool longView,const std::string& filename,
             size_t it = 4;
             std::string viewNoStr;
             while (it < mid.size() && std::isdigit(mid.at(it),std::locale())) {
-                viewNoStr.append(mid.at(it));
+                viewNoStr.push_back(mid.at(it));
                 ++it;
             }
 
@@ -547,7 +549,7 @@ static bool matchesPattern_v2(const std::string& filename,const std::string& pat
         while (sharpIt < pattern.size() && pattern.at(sharpIt) == '#') {
             ++sharpIt;
             ++sharpCount;
-            variable.append('#');
+            variable.push_back('#');
         }
 
         bool foundPrintFLikeSyntax = false;
@@ -561,7 +563,7 @@ static bool matchesPattern_v2(const std::string& filename,const std::string& pat
             std::string digitStr;
             while (printfIt < pattern.size() && std::isdigit(pattern.at(printfIt),std::locale()))
             {
-                digitStr.append(pattern.at(printfIt));
+                digitStr.push_back(pattern.at(printfIt));
                 ++printfIt;
             }
             if (printfIt < pattern.size() && std::tolower(pattern.at(printfIt),std::locale()) == 'd') {
@@ -582,7 +584,7 @@ static bool matchesPattern_v2(const std::string& filename,const std::string& pat
             if (!matchesHashTag(sharpCount,filename,filenameIt,&endHashTag,&fNumber)) {
                 return false;
             }
-            if (wasFrameNumberSet && fNumber != frameNumber) {
+            if (wasFrameNumberSet && fNumber != *frameNumber) {
                 return false;
             }
 
