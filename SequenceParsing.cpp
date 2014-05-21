@@ -535,7 +535,7 @@ static bool matchesPattern_v2(const std::string& filename,const std::string& pat
     bool wasFrameNumberSet = false;
     bool wasViewNumberSet = false;
 
-    *viewNumber = -1;
+    *viewNumber = 0;
     *frameNumber = -1;
 
     size_t filenameIt = 0;
