@@ -555,7 +555,8 @@ static bool matchesPattern_v2(const std::string& filename,const std::string& pat
         bool foundPrintFLikeSyntax = false;
         bool foundShortView = false;
         bool foundLongView = false;
-        int printfDigitCount = 0;
+        int printfDigitCount = 2;
+        int printfLikeVariableSize = 0;
         if (pattern.at(patternIt) == '%')
         {
 
@@ -565,6 +566,7 @@ static bool matchesPattern_v2(const std::string& filename,const std::string& pat
             {
                 digitStr.push_back(pattern.at(printfIt));
                 ++printfIt;
+                ++printfLikeVariableSize;
             }
             if (printfIt < pattern.size() && std::tolower(pattern.at(printfIt),std::locale()) == 'd') {
                 foundPrintFLikeSyntax = true;
@@ -610,7 +612,7 @@ static bool matchesPattern_v2(const std::string& filename,const std::string& pat
             *frameNumber = fNumber;
 
             filenameIt = endPrintfLike;
-            patternIt += printfDigitCount;
+            patternIt += printfLikeVariableSize;
 
 
         } else if (foundLongView) {
