@@ -555,8 +555,8 @@ static bool matchesPattern_v2(const std::string& filename,const std::string& pat
         bool foundPrintFLikeSyntax = false;
         bool foundShortView = false;
         bool foundLongView = false;
-        int printfDigitCount = 2;
-        int printfLikeVariableSize = 0;
+        int printfDigitCount = 0;
+        int printfLikeVariableSize = 2;
         if (pattern.at(patternIt) == '%')
         {
 
