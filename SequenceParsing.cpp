@@ -236,14 +236,15 @@ static void removeAllOccurences(std::string& str,const std::string& toRemove,boo
 
 static int stringToInt(const std::string& str)
 {
-    std::stringstream ss(str);
-    int ret = 0;
-    try {
-        ss >> ret;
-    } catch (const std::ios_base::failure& e) {
-        return 0;
-    }
-    return ret;
+//    std::stringstream ss(str);
+//    int ret = 0;
+//    try {
+//        ss >> ret;
+//    } catch (const std::ios_base::failure& e) {
+//        return 0;
+//    }
+//    return ret;
+    return std::atoi(str.c_str());
 }
 
 static std::string stringFromInt(int nb)
@@ -1113,7 +1114,7 @@ static bool filesListFromPattern_internal(const std::string& pattern,SequencePar
 }
 
 bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFromPattern* sequence) {
-    filesListFromPattern_internal(pattern,sequence);
+    return filesListFromPattern_internal(pattern,sequence);
 }
 
 StringList sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPattern& sequence,int onlyViewIndex ) {
