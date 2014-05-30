@@ -48,6 +48,7 @@ typedef std::vector<std::string> StringList ;
 namespace SequenceParsing {
 
 
+
 /**
      * @brief A class representing the content of a filename.
      * Initialize it passing it a real filename and it will initialize the data structures
@@ -156,6 +157,7 @@ public:
 
 private:
 
+
     FileNameContentPrivate* _imp;
 
 };
@@ -169,13 +171,13 @@ private:
 std::string removePath(std::string& filename);
 
 
+
 ///map: < time, map < view_index, file name > >
 ///Explanation: for each frame number, there may be multiple views, each mapped to a filename.
 ///If there'are 2 views, index 0 is considered to be the left view and index 1 is considered to be the right view.
 ///If there'are multiple views, the index is corresponding to the view
 ///This type is used when retrieving an existing file sequence out of a pattern.
 typedef std::map<int,std::map<int,std::string> > SequenceFromPattern;
-
 /**
      * @brief Given a pattern string, returns a string list with all the existing file names
      * matching the mattern.
@@ -205,6 +207,7 @@ typedef std::map<int,std::map<int,std::string> > SequenceFromPattern;
      * is not valid.
      **/
 bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFromPattern* sequence);
+
 
 /**
      * @brief Transforms a sequence parsed from a pattern to a absolute file names list. If

@@ -289,11 +289,13 @@ static void getFilesFromDir(tinydir_dir& dir,StringList* ret)
     }
 }
 
-static bool matchesHashTag(int sharpCount,const std::string& filename,size_t startingPos,size_t *endPos,int* frameNumber)
+static bool matchesHashTag(int sharpCount,const std::string& filename,
+                           size_t startingPos,const std::locale& loc,
+                           size_t *endPos,int* frameNumber)
 {
     std::string variable;
     size_t variableIt = startingPos;
-    while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),std::locale())) {
+    while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),loc)) {
         variable.push_back(filename.at(variableIt));
          ++variableIt;
     }
@@ -325,11 +327,12 @@ static bool matchesHashTag(int sharpCount,const std::string& filename,size_t sta
 }
 
 static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
-                                    size_t startingPos,size_t *endPos,int* frameNumber) {
+                                    size_t startingPos,const std::locale& loc,
+                                    size_t *endPos,int* frameNumber) {
 
     std::string variable;
     size_t variableIt = startingPos;
-    while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),std::locale())) {
+    while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),loc)) {
         variable.push_back(filename.at(variableIt));
          ++variableIt;
     }
@@ -360,7 +363,8 @@ static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
 }
 
 static bool matchesView(bool longView,const std::string& filename,
-                                    size_t startingPos,size_t *endPos,int* viewNumber) {
+                                    size_t startingPos,const std::locale& loc,
+                        size_t *endPos,int* viewNumber) {
 
     std::string mid = filename.substr(startingPos);
     if (!longView) {
@@ -376,7 +380,7 @@ static bool matchesView(bool longView,const std::string& filename,
         } else if (startsWith(mid,"view")) {
             size_t it = 4;
             std::string viewNoStr;
-            while (it < mid.size() && std::isdigit(mid.at(it),std::locale())) {
+            while (it < mid.size() && std::isdigit(mid.at(it),loc)) {
                 viewNoStr.push_back(mid.at(it));
                 ++it;
             }
@@ -401,7 +405,7 @@ static bool matchesView(bool longView,const std::string& filename,
         } else if (startsWith(mid,"view")) {
             size_t it = 4;
             std::string viewNoStr;
-            while (it < mid.size() && std::isdigit(mid.at(it),std::locale())) {
+            while (it < mid.size() && std::isdigit(mid.at(it),loc)) {
                 viewNoStr.push_back(mid.at(it));
                 ++it;
             }
@@ -421,20 +425,29 @@ static bool matchesView(bool longView,const std::string& filename,
 static bool matchesPattern_v2(const std::string& filename,
                               const std::string& pattern,
                               const std::string& patternExtension,
+                              const std::locale& loc,
                               int* frameNumber,int* viewNumber)
 {
+
+    ///If the frame number is found twice or more, this is to verify if they are identical
     bool wasFrameNumberSet = false;
+
+    ///If the view number is found twice or more, this is to verify if they are identical
     bool wasViewNumberSet = false;
 
+    ///Default view number and frame number
     *viewNumber = 0;
     *frameNumber = -1;
 
+    ///Iterators on the pattern and the filename
     size_t filenameIt = 0;
     size_t patternIt = 0;
 
+    ///make a copy of the filename from which we remove the file extension
     std::string filenameCpy = filename;
     std::string fileExt = removeFileExtension(filenameCpy);
 
+    ///Extensions not matching, exit.
     if (fileExt != patternExtension) {
         return false;
     }
@@ -442,10 +455,14 @@ static bool matchesPattern_v2(const std::string& filename,
     ///if we don't find at least a character different than a digit in the filename
     ///we assume the filename is composed only of digits and we return false.
     bool foundNotADigit = false;
+
+    ///Iterating while not at end of either the pattern or the filename
     while (filenameIt < filenameCpy.size() && patternIt < pattern.size())
     {
-
+        ///the count of '#' characters found
         int sharpCount = 0;
+
+        ///Actually start counting the #
         size_t sharpIt = patternIt;
         std::string variable;
         while (sharpIt < pattern.size() && pattern.at(sharpIt) == '#') {
@@ -454,23 +471,36 @@ static bool matchesPattern_v2(const std::string& filename,
             variable.push_back('#');
         }
 
+        ///Did we found a %d style syntax ?
         bool foundPrintFLikeSyntax = false;
+
+        ///Did we found a %v style syntax ?
         bool foundShortView = false;
+
+        ///Did we found a %V style syntax ?
         bool foundLongView = false;
+
+        ///How many digits the printf style %d syntax are desired, e.g %04d is 4
         int printfDigitCount = 0;
+
+        ///The number of characters that compose the %04d style variable, this is at least 2 (%d)
         int printfLikeVariableSize = 2;
         if (pattern.at(patternIt) == '%')
         {
-
+            ///We found the '%' digit, start at the character right after to
+            ///find digits
             size_t printfIt = patternIt + 1;
             std::string digitStr;
-            while (printfIt < pattern.size() && std::isdigit(pattern.at(printfIt),std::locale()))
+            while (printfIt < pattern.size() && std::isdigit(pattern.at(printfIt),loc))
             {
                 digitStr.push_back(pattern.at(printfIt));
                 ++printfIt;
                 ++printfLikeVariableSize;
             }
-            if (printfIt < pattern.size() && std::tolower(pattern.at(printfIt),std::locale()) == 'd') {
+
+            ///they are no more digit after the '%', check if this is correctly terminating by a 'd' character.
+            /// We also treat the view %v and %V cases here
+            if (printfIt < pattern.size() && std::tolower(pattern.at(printfIt),loc) == 'd') {
                 foundPrintFLikeSyntax = true;
                 printfDigitCount = stringToInt(digitStr);
             } else if (printfIt < pattern.size() && pattern.at(printfIt) == 'V') {
@@ -480,14 +510,21 @@ static bool matchesPattern_v2(const std::string& filename,
             }
         }
 
-        if (sharpCount > 0)
+
+        if (sharpCount > 0) ///If we found #
         {
+            ///There cannot be another variable!
             assert(!foundPrintFLikeSyntax && !foundLongView && !foundShortView);
             size_t endHashTag;
             int fNumber;
-            if (!matchesHashTag(sharpCount,filenameCpy,filenameIt,&endHashTag,&fNumber)) {
+
+            ///check if the filename matches the number of hashes
+            if (!matchesHashTag(sharpCount,filenameCpy,filenameIt,loc,&endHashTag,&fNumber)) {
                 return false;
             }
+
+            ///If the frame number had already been set and it was different, this filename doesn't match
+            ///the pattern.
             if (wasFrameNumberSet && fNumber != *frameNumber) {
                 return false;
             }
@@ -495,17 +532,24 @@ static bool matchesPattern_v2(const std::string& filename,
             wasFrameNumberSet = true;
             *frameNumber = fNumber;
 
+            ///increment iterators to after the variable
             filenameIt = endHashTag;
             patternIt += sharpCount;
 
-        } else if (foundPrintFLikeSyntax) {
+        } else if (foundPrintFLikeSyntax) { ///If we found a %d style syntax
+
+            ///There cannot be another variable!
             assert(sharpCount == 0 && !foundLongView && !foundShortView);
 
             size_t endPrintfLike;
             int fNumber;
-            if (!matchesPrintfLikeSyntax(printfDigitCount,filenameCpy,filenameIt,&endPrintfLike,&fNumber)) {
+            ///check if the filename matches the %d syntax
+            if (!matchesPrintfLikeSyntax(printfDigitCount,filenameCpy,filenameIt,loc,&endPrintfLike,&fNumber)) {
                 return false;
             }
+
+            ///If the frame number had already been set and it was different, this filename doesn't match
+            ///the pattern.
             if (wasFrameNumberSet && fNumber != *frameNumber) {
                 return false;
             }
@@ -513,18 +557,25 @@ static bool matchesPattern_v2(const std::string& filename,
             wasFrameNumberSet = true;
             *frameNumber = fNumber;
 
+             ///increment iterators to after the variable
             filenameIt = endPrintfLike;
             patternIt += printfLikeVariableSize;
 
 
         } else if (foundLongView) {
+
+             ///There cannot be another variable!
             assert(sharpCount == 0 && !foundPrintFLikeSyntax && !foundShortView);
 
             size_t endVar;
             int vNumber;
-            if (!matchesView(true,filenameCpy,filenameIt,&endVar,&vNumber)) {
+             ///check if the filename matches the %V syntax
+            if (!matchesView(true,filenameCpy,filenameIt,loc,&endVar,&vNumber)) {
                 return false;
             }
+
+            ///If the view number had already been set and it was different, this filename doesn't match
+            ///the pattern.
             if (wasViewNumberSet && vNumber != *viewNumber) {
                 return false;
             }
@@ -532,18 +583,25 @@ static bool matchesPattern_v2(const std::string& filename,
             wasViewNumberSet = true;
             *viewNumber = vNumber;
 
+            ///increment iterators to after the variable
             filenameIt = endVar;
             patternIt += 2;
 
 
         } else if (foundShortView) {
+
+             ///There cannot be another variable!
             assert(sharpCount == 0 && !foundPrintFLikeSyntax && !foundLongView);
 
             size_t endVar;
             int vNumber;
-            if (!matchesView(false,filenameCpy,filenameIt,&endVar,&vNumber)) {
+            ///check if the filename matches the %v syntax
+            if (!matchesView(false,filenameCpy,filenameIt,loc,&endVar,&vNumber)) {
                 return false;
             }
+
+            ///If the view number had already been set and it was different, this filename doesn't match
+            ///the pattern.
             if (wasViewNumberSet && vNumber != *viewNumber) {
                 return false;
             }
@@ -551,15 +609,19 @@ static bool matchesPattern_v2(const std::string& filename,
             wasViewNumberSet = true;
             *viewNumber = vNumber;
 
+            ///increment iterators to after the variable
             filenameIt = endVar;
             patternIt += 2;
         } else {
-            bool isCharDigit = std::isdigit(filenameCpy.at(filenameIt),std::locale());
-            if (!isCharDigit) {
-                foundNotADigit = true;
+            ///If we didn't find something different than a digit until here, check if the current character is one.
+            if (!foundNotADigit) {
+                bool isCharDigit = std::isdigit(filenameCpy.at(filenameIt),loc);
+                if (!isCharDigit) {
+                    foundNotADigit = true;
+                }
             }
             ///we found nothing, just compare the characters without case sensitivity
-            if (std::tolower(pattern.at(patternIt),std::locale()) != std::tolower(filenameCpy.at(filenameIt),std::locale())) {
+            if (std::tolower(pattern.at(patternIt),loc) != std::tolower(filenameCpy.at(filenameIt),loc)) {
                 return false;
             }
             ++patternIt;
@@ -568,6 +630,7 @@ static bool matchesPattern_v2(const std::string& filename,
 
 
     }
+    ///If we found only digits, return false, we're not able to validate a pattern containing only digits.
     return foundNotADigit ? true : false;
 }
 
@@ -998,7 +1061,8 @@ std::string removePath(std::string& filename) {
 }
 
 
-bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFromPattern* sequence) {
+static bool filesListFromPattern_internal(const std::string& pattern,SequenceParsing::SequenceFromPattern* sequence)
+{
     if (pattern.empty()) {
         return false;
     }
@@ -1023,10 +1087,12 @@ bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFr
     getFilesFromDir(patternDir, &files);
     tinydir_close(&patternDir);
 
+    std::locale loc;
+
     for (int i = 0; i < (int)files.size(); ++i) {
         int frameNumber;
         int viewNumber;
-        if (matchesPattern_v2(files.at(i),patternUnPathed,patternExtension,&frameNumber,&viewNumber)) {
+        if (matchesPattern_v2(files.at(i),patternUnPathed,patternExtension,loc,&frameNumber,&viewNumber)) {
             SequenceFromPattern::iterator it = sequence->find(frameNumber);
             std::string absoluteFileName = patternPath + files.at(i);
             if (it != sequence->end()) {
@@ -1044,6 +1110,10 @@ bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFr
         }
     }
     return true;
+}
+
+bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFromPattern* sequence) {
+    filesListFromPattern_internal(pattern,sequence);
 }
 
 StringList sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPattern& sequence,int onlyViewIndex ) {
