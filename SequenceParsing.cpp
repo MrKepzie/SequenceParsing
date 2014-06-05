@@ -631,6 +631,13 @@ static bool matchesPattern_v2(const std::string& filename,
 
 
     }
+
+    bool fileNameAtEnd =  filenameIt >= filenameCpy.size();
+    bool patternAtEnd =  patternIt >= pattern.size();
+     if (!fileNameAtEnd || !patternAtEnd) {
+         return false;
+     }
+
     ///If we found only digits, return false, we're not able to validate a pattern containing only digits.
     return foundNotADigit ? true : false;
 }
