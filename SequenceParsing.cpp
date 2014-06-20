@@ -628,7 +628,6 @@ static bool matchesPattern_v2(const std::string& filename,
          return false;
      }
 
-    ///If we found only digits, return false, we're not able to validate a pattern containing only digits.
     return true ;
 }
 
@@ -894,10 +893,6 @@ int FileNameContent::getPotentialFrameNumbersCount() const
      * @returns True if it identified 'other' as belonging to the same sequence, false otherwise.
      **/
 bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<int>* numberIndexesToVary) const {
-
-    if (isFileNameComposedOnlyOfDigits() || other.isFileNameComposedOnlyOfDigits()) {
-        return false;
-    }
 
     const std::vector<FileNameElement>& otherElements = other._imp->orderedElements;
     if (otherElements.size() != _imp->orderedElements.size()) {
