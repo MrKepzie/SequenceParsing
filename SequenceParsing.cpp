@@ -453,10 +453,6 @@ static bool matchesPattern_v2(const std::string& filename,
         return false;
     }
 
-    ///if we don't find at least a character different than a digit in the filename
-    ///we assume the filename is composed only of digits and we return false.
-    bool foundNotADigit = false;
-
     ///Iterating while not at end of either the pattern or the filename
     while (filenameIt < filenameCpy.size() && patternIt < pattern.size())
     {
@@ -614,13 +610,7 @@ static bool matchesPattern_v2(const std::string& filename,
             filenameIt = endVar;
             patternIt += 2;
         } else {
-            ///If we didn't find something different than a digit until here, check if the current character is one.
-            if (!foundNotADigit) {
-                bool isCharDigit = std::isdigit(filenameCpy.at(filenameIt),loc);
-                if (!isCharDigit) {
-                    foundNotADigit = true;
-                }
-            }
+
             ///we found nothing, just compare the characters without case sensitivity
             if (std::tolower(pattern.at(patternIt),loc) != std::tolower(filenameCpy.at(filenameIt),loc)) {
                 return false;
@@ -639,7 +629,7 @@ static bool matchesPattern_v2(const std::string& filename,
      }
 
     ///If we found only digits, return false, we're not able to validate a pattern containing only digits.
-    return foundNotADigit ? true : false;
+    return true ;
 }
 
 }
