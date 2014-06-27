@@ -1287,7 +1287,8 @@ bool SequenceFromFiles::tryInsertFile(const FileNameContent& file) {
 
     std::vector<int> frameNumberIndexes;
     bool insert = false;
-    if (file.matchesPattern(_imp->sequence[0], &frameNumberIndexes)) {
+    const  FileNameContent& firstFileContent = _imp->sequence[0];
+    if (file.matchesPattern(firstFileContent, &frameNumberIndexes)) {
 
         if (std::find(_imp->filesList.begin(),_imp->filesList.end(),file.absoluteFileName()) != _imp->filesList.end()) {
             return false;
@@ -1304,9 +1305,9 @@ bool SequenceFromFiles::tryInsertFile(const FileNameContent& file) {
 
             for (unsigned int i = 0; i < frameNumberIndexes.size(); ++i) {
                 std::string frameNumberStr;
-                bool ok = _imp->sequence[0].getNumberByIndex(_imp->frameNumberStringIndexes[i], &frameNumberStr);
+                bool ok = firstFileContent.getNumberByIndex(_imp->frameNumberStringIndexes[i], &frameNumberStr);
                 if (ok && firstFrameNumberStr.empty()) {
-                    _imp->filesMap.insert(std::make_pair(stringToInt(frameNumberStr),file.absoluteFileName()));
+                    _imp->filesMap.insert(std::make_pair(stringToInt(frameNumberStr),firstFileContent.absoluteFileName()));
                     firstFrameNumberStr = frameNumberStr;
                 } else if (!firstFrameNumberStr.empty() && stringToInt(frameNumberStr) != stringToInt(firstFrameNumberStr)) {
                     return false;
