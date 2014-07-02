@@ -889,7 +889,7 @@ int FileNameContent::getPotentialFrameNumbersCount() const
      * @param numberIndexToVary [out] In case the pattern contains several numbers (@see getNumberByIndex)
      * this value will be fed the appropriate number index that should be used for frame number.
      * For example, if this filename is myfile001_000.jpg and the other file is myfile001_001.jpg
-     * numberIndexToVary would be 1 as the frame number string indentied in that case is the last number.
+     * numberIndexToVary would be 1 as the frame number string indentified in that case is the last number.
      * @returns True if it identified 'other' as belonging to the same sequence, false otherwise.
      **/
 bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<int>* numberIndexesToVary) const {
@@ -899,10 +899,10 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
         return false;
     }
 
-    ///potential frame numbers are pairs of strings from this filename and the same
-    ///string in the other filename.
-    ///Same numbers are not inserted in this vector.
-    std::vector< std::pair< int, std::pair<std::string,std::string> > > potentialFrameNumbers;
+
+    ///We only consider the last potential frame number
+    int frameNumberIndexStringIndex = -1;
+
     int numbersCount = 0;
     for (unsigned int i = 0; i < _imp->orderedElements.size(); ++i) {
         if (_imp->orderedElements[i].type != otherElements[i].type) {
@@ -951,8 +951,7 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
 
                 }
                 if (valid) {
-                    potentialFrameNumbers.push_back(std::make_pair(numbersCount,
-                                                                   std::make_pair(_imp->orderedElements[i].data, otherElements[i].data)));
+                   frameNumberIndexStringIndex = numbersCount;
                 }
 
             }
@@ -962,30 +961,37 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
         }
     }
     ///strings are identical
-    if (potentialFrameNumbers.empty()) {
+    if (frameNumberIndexStringIndex == -1) {
         return false;
     }
 
-    ///find out in the potentialFrameNumbers what is the minimum with pairs and pick it up
-    /// for example if 1 pair is : < 0001, 802398 > and the other pair is < 01 , 10 > we pick
-    /// the second one.
-    std::vector<int> minIndexes;
-    int minimum = INT_MAX;
-    for (unsigned int i = 0; i < potentialFrameNumbers.size(); ++i) {
-        int thisNumber = stringToInt(potentialFrameNumbers[i].second.first);
-        int otherNumber = stringToInt(potentialFrameNumbers[i].second.second);
-        int diff = std::abs(thisNumber - otherNumber);
-        if (diff < minimum) {
-            minimum = diff;
-            minIndexes.clear();
-            minIndexes.push_back(i);
-        } else if (diff == minimum) {
-            minIndexes.push_back(i);
-        }
-    }
-    for (unsigned int i = 0; i < minIndexes.size(); ++i) {
-        numberIndexesToVary->push_back(potentialFrameNumbers[minIndexes[i]].first);
-    }
+    /*Code commented-out : In this previous version we would try to find several places in the filename where the
+    frame number would vary, such as:
+     mySequence###lalala###.jpg  This led to very complicated cases to handle for too much troubles.
+     The new version only assumes the frame number index varying is the last number varying.
+    */
+
+//    ///find out in the potentialFrameNumbers what is the minimum with pairs and pick it up
+//    /// for example if 1 pair is : < 0001, 802398 > and the other pair is < 01 , 10 > we pick
+//    /// the second one.
+//    std::vector<int> minIndexes;
+//    int minimum = INT_MAX;
+//    for (unsigned int i = 0; i < potentialFrameNumbers.size(); ++i) {
+//        int thisNumber = stringToInt(potentialFrameNumbers[i].second.first);
+//        int otherNumber = stringToInt(potentialFrameNumbers[i].second.second);
+//        int diff = std::abs(thisNumber - otherNumber);
+//        if (diff < minimum) {
+//            minimum = diff;
+//            minIndexes.clear();
+//            minIndexes.push_back(i);
+//        } else if (diff == minimum) {
+//            minIndexes.push_back(i);
+//        }
+//    }
+//    for (unsigned int i = 0; i < minIndexes.size(); ++i) {
+//        numberIndexesToVary->push_back(potentialFrameNumbers[minIndexes[i]].first);
+//    }
+    numberIndexesToVary->push_back(frameNumberIndexStringIndex);
     return true;
 
 }
