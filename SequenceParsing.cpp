@@ -901,6 +901,8 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
 
 
     ///We only consider the last potential frame number
+    ///
+    int nbVaryingFrameNumbers = 0;
     int frameNumberIndexStringIndex = -1;
 
     int numbersCount = 0;
@@ -952,6 +954,7 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
                 }
                 if (valid) {
                    frameNumberIndexStringIndex = numbersCount;
+                   ++nbVaryingFrameNumbers;
                 }
 
             }
@@ -961,7 +964,8 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
         }
     }
     ///strings are identical
-    if (frameNumberIndexStringIndex == -1) {
+    /// we only accept files with 1 varying number
+    if (frameNumberIndexStringIndex == -1 || nbVaryingFrameNumbers != 1) {
         return false;
     }
 
