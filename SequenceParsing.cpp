@@ -763,30 +763,6 @@ void FileNameContentPrivate::parse(const std::string& absoluteFileName) {
         }
     }
 
-    ///now build the generated pattern with the ordered elements.
-    int numberIndex = 0;
-    for (unsigned int j = 0; j < orderedElements.size(); ++j) {
-        const FileNameElement& e = orderedElements[j];
-        switch (e.type) {
-        case FileNameElement::TEXT:
-            generatedPattern.append(e.data);
-            break;
-        case FileNameElement::FRAME_NUMBER:
-        {
-            std::string hashStr;
-            int c = 0;
-            while (c < (int)e.data.size()) {
-                hashStr.push_back('#');
-                ++c;
-            }
-            generatedPattern.append(hashStr + stringFromInt(numberIndex));
-            ++numberIndex;
-        } break;
-        default:
-            break;
-        }
-    }
-
 }
 
 StringList FileNameContent::getAllTextElements() const {
@@ -848,6 +824,31 @@ bool FileNameContent::isFileNameComposedOnlyOfDigits() const {
      * @brief Returns the file pattern found in the filename with hash characters style for frame number (i.e: ###)
      **/
 const std::string& FileNameContent::getFilePattern() const {
+    if (_imp->generatedPattern.empty()) {
+        ///now build the generated pattern with the ordered elements.
+        int numberIndex = 0;
+        for (unsigned int j = 0; j < _imp->orderedElements.size(); ++j) {
+            const FileNameElement& e = _imp->orderedElements[j];
+            switch (e.type) {
+                case FileNameElement::TEXT:
+                    _imp->generatedPattern.append(e.data);
+                    break;
+                case FileNameElement::FRAME_NUMBER:
+                {
+                    std::string hashStr;
+                    int c = 0;
+                    while (c < (int)e.data.size()) {
+                        hashStr.push_back('#');
+                        ++c;
+                    }
+                    _imp->generatedPattern.append(hashStr + stringFromInt(numberIndex));
+                    ++numberIndex;
+                } break;
+                default:
+                    break;
+            }
+        }
+    }
     return _imp->generatedPattern;
 }
 
