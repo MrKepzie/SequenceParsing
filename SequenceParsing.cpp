@@ -1423,33 +1423,24 @@ std::string SequenceFromFiles::generateUserFriendlySequencePattern() const {
     removePath(pattern);
 
     std::vector< std::pair<int,int> > chunks;
-    int first = getFirstFrame();
-    while(first <= getLastFrame()){
+    //int first = getFirstFrame();
+    std::map<int,std::string>::const_iterator first = _imp->filesMap.begin();
+    std::map<int,std::string>::const_iterator cur = first;
+    std::map<int,std::string>::const_iterator next = first;
+    ++next;
+    while(first != _imp->filesMap.end()){
 
         int breakCounter = 0;
-        while (!(_imp->isInSequence(first)) && breakCounter < NATRON_DIALOG_MAX_SEQUENCES_HOLE) {
-            ++first;
+        while (next != _imp->filesMap.end() && next->first == (cur->first + 1) &&
+               /*!(_imp->isInSequence(first)) &&*/ breakCounter < NATRON_DIALOG_MAX_SEQUENCES_HOLE) {
+            ++next;
+            ++cur;
             ++breakCounter;
         }
-
-        if (breakCounter >= NATRON_DIALOG_MAX_SEQUENCES_HOLE) {
-            break;
-        }
-
-        chunks.push_back(std::make_pair(first, getLastFrame()));
-        int next = first + 1;
-        int prev = first;
-        int count = 1;
-        while((next <= getLastFrame())
-              && _imp->isInSequence(next)
-              && (next == prev + 1) ){
-            prev = next;
-            ++next;
-            ++count;
-        }
-        --next;
-        chunks.back().second = next;
-        first += count;
+        chunks.push_back(std::make_pair(first->first,cur->first));
+        first = next;
+        ++next;
+        cur = first;
     }
 
     if (chunks.size() == 1) {
@@ -1459,17 +1450,17 @@ std::string SequenceFromFiles::generateUserFriendlySequencePattern() const {
         pattern += stringFromInt(chunks[0].second);
     } else {
         pattern.append(" ( ");
-        for(unsigned int i = 0 ; i < chunks.size() ; ++i) {
-            if(chunks[i].first != chunks[i].second){
+        for (unsigned int i = 0 ; i < chunks.size() ; ++i) {
+            if (chunks[i].first != chunks[i].second) {
                 pattern += ' ';
                 pattern += stringFromInt(chunks[i].first);
                 pattern += '-';
                 pattern += stringFromInt(chunks[i].second);
-            }else{
+            } else {
                 pattern += ' ';
                 pattern += stringFromInt(chunks[i].first);
             }
-            if(i < chunks.size() -1) pattern.append(" /");
+            if (i < chunks.size() -1) pattern.append(" /");
         }
         pattern.append(" ) ");
     }
