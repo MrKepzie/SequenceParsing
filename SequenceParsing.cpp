@@ -41,6 +41,7 @@
 #include <cassert>
 #include <cmath>
 #include <climits>
+#include <cstddef>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -64,6 +65,8 @@
 ///the maximum number of non existing frame before Natron gives up trying to figure out a sequence layout.
 #define NATRON_DIALOG_MAX_SEQUENCES_HOLE 1000
 
+using std::size_t;
+
 namespace  {
 
 
@@ -79,15 +82,15 @@ namespace  {
 static bool extractCommonPartsAndVariablesFromPattern(const std::string& patternUnPathedWithoutExt,
                                                       const std::string& patternExtension,
                                                       StringList* commonParts,
-                                                      std::vector<std::pair<std::string,int> >* variablesByOrder) {
-    int i = 0;
+                                                      std::vector<std::pair<std::string,int> >* variablesByOrder)
+{
     bool inPrintfLikeArg = false;
     int printfLikeArgIndex = 0;
     std::string commonPart;
     std::string variable;
     int commonCharactersFound = 0;
     bool previousCharIsSharp = false;
-    while (i < (int)patternUnPathedWithoutExt.size()) {
+    for (int i = 0; i < (int)patternUnPathedWithoutExt.size(); ++i) {
         const char& c = patternUnPathedWithoutExt.at(i);
         if (c == '#') {
             if (!commonPart.empty()) {
@@ -164,7 +167,6 @@ static bool extractCommonPartsAndVariablesFromPattern(const std::string& pattern
                 variable.clear();
             }
         }
-        ++i;
     }
 
     if (!commonPart.empty()) {
@@ -227,8 +229,9 @@ static bool endsWith(const std::string &str, const std::string &suffix)
 static void removeAllOccurences(std::string& str,const std::string& toRemove,bool caseSensitive = false)
 {
     if (str.size()) {
-        size_t i = 0;
-        while ((i = findStr(str, toRemove, i,caseSensitive)) != std::string::npos) {
+        for (size_t i = findStr(str, toRemove, 0, caseSensitive);
+             i != std::string::npos;
+             i = findStr(str, toRemove, i,caseSensitive)) {
             str.erase(i,toRemove.size());
         }
     }
@@ -254,14 +257,14 @@ static std::string stringFromInt(int nb)
     return ss.str();
 }
 
-static std::string removeFileExtension(std::string& filename) {
-    int i = filename.size() -1;
-    std::string extension;
-    while(i>=0 && filename.at(i) != '.') {
-        extension.insert(0,1,filename.at(i));
-        --i;
+static std::string removeFileExtension(std::string& filename)
+{
+    size_t lastdot = filename.find_last_of(".");
+    if (lastdot == std::string::npos) {
+        return "";
     }
-    filename = filename.substr(0,i);
+    std::string extension = filename.substr(lastdot + 1);
+    filename = filename.substr(0, lastdot);
     return extension;
 }
 
@@ -296,9 +299,10 @@ static bool matchesHashTag(int sharpCount,const std::string& filename,
 {
     std::string variable;
     size_t variableIt = startingPos;
-    while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),loc)) {
+    for (variableIt = startingPos;
+         variableIt < filename.size() && std::isdigit(filename.at(variableIt),loc);
+         ++variableIt) {
         variable.push_back(filename.at(variableIt));
-         ++variableIt;
     }
     *endPos = variableIt;
 
@@ -307,14 +311,12 @@ static bool matchesHashTag(int sharpCount,const std::string& filename,
     }
 
     int prepending0s = 0;
-    int i = 0;
-    while (i < (int)variable.size()) {
+    for (size_t i = 0; i < variable.size(); ++i) {
         if (variable.at(i) != '0') {
             break;
         } else {
             ++prepending0s;
         }
-        ++i;
     }
 
     ///extra padding on numbers bigger than the hash chars count are not allowed.
@@ -329,13 +331,14 @@ static bool matchesHashTag(int sharpCount,const std::string& filename,
 
 static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
                                     size_t startingPos,const std::locale& loc,
-                                    size_t *endPos,int* frameNumber) {
-
+                                    size_t *endPos,int* frameNumber)
+{
     std::string variable;
-    size_t variableIt = startingPos;
-    while (variableIt < filename.size() && std::isdigit(filename.at(variableIt),loc)) {
+    size_t variableIt;
+    for (variableIt = startingPos;
+         variableIt < filename.size() && std::isdigit(filename.at(variableIt),loc);
+         ++variableIt) {
         variable.push_back(filename.at(variableIt));
-         ++variableIt;
     }
     *endPos = variableIt;
 
@@ -344,14 +347,12 @@ static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
     }
 
     int prepending0s = 0;
-    int i = 0;
-    while (i < (int)variable.size()) {
+    for (size_t i = 0; i < variable.size(); ++i) {
         if (variable.at(i) != '0') {
             break;
         } else {
             ++prepending0s;
         }
-        ++i;
     }
 
     ///extra padding on numbers bigger than the hash chars count are not allowed.
@@ -363,10 +364,13 @@ static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
     return true;
 }
 
-static bool matchesView(bool longView,const std::string& filename,
-                                    size_t startingPos,const std::locale& loc,
-                        size_t *endPos,int* viewNumber) {
-
+static bool matchesView(bool longView,
+                        const std::string& filename,
+                        size_t startingPos,
+                        const std::locale& loc,
+                        size_t *endPos,
+                        int* viewNumber)
+{
     std::string mid = filename.substr(startingPos);
     if (!longView) {
 
@@ -379,11 +383,9 @@ static bool matchesView(bool longView,const std::string& filename,
             *endPos = startingPos + 1;
             return true;
         } else if (startsWith(mid,"view")) {
-            size_t it = 4;
             std::string viewNoStr;
-            while (it < mid.size() && std::isdigit(mid.at(it),loc)) {
+            for (size_t it = 4; it < mid.size() && std::isdigit(mid.at(it),loc); ++it) {
                 viewNoStr.push_back(mid.at(it));
-                ++it;
             }
             if (!viewNoStr.empty()) {
                 *viewNumber = stringToInt(viewNoStr);
@@ -404,11 +406,9 @@ static bool matchesView(bool longView,const std::string& filename,
             *endPos = startingPos + 4;
             return true;
         } else if (startsWith(mid,"view")) {
-            size_t it = 4;
             std::string viewNoStr;
-            while (it < mid.size() && std::isdigit(mid.at(it),loc)) {
+            for (size_t it = 4; it < mid.size() && std::isdigit(mid.at(it),loc); ++it) {
                 viewNoStr.push_back(mid.at(it));
-                ++it;
             }
 
             if (!viewNoStr.empty()) {
@@ -427,7 +427,8 @@ static bool matchesPattern_v2(const std::string& filename,
                               const std::string& pattern,
                               const std::string& patternExtension,
                               const std::locale& loc,
-                              int* frameNumber,int* viewNumber)
+                              int* frameNumber,
+                              int* viewNumber)
 {
 
     ///If the frame number is found twice or more, this is to verify if they are identical
@@ -454,16 +455,15 @@ static bool matchesPattern_v2(const std::string& filename,
     }
 
     ///Iterating while not at end of either the pattern or the filename
-    while (filenameIt < filenameCpy.size() && patternIt < pattern.size())
-    {
+    while (filenameIt < filenameCpy.size() && patternIt < pattern.size()) {
         ///the count of '#' characters found
         int sharpCount = 0;
 
         ///Actually start counting the #
-        size_t sharpIt = patternIt;
         std::string variable;
-        while (sharpIt < pattern.size() && pattern.at(sharpIt) == '#') {
-            ++sharpIt;
+        for (size_t sharpIt = patternIt;
+             sharpIt < pattern.size() && pattern.at(sharpIt) == '#';
+             ++sharpIt) {
             ++sharpCount;
             variable.push_back('#');
         }
@@ -482,16 +482,15 @@ static bool matchesPattern_v2(const std::string& filename,
 
         ///The number of characters that compose the %04d style variable, this is at least 2 (%d)
         int printfLikeVariableSize = 2;
-        if (pattern.at(patternIt) == '%')
-        {
+        if (pattern.at(patternIt) == '%') {
             ///We found the '%' digit, start at the character right after to
             ///find digits
-            size_t printfIt = patternIt + 1;
+            size_t printfIt;
             std::string digitStr;
-            while (printfIt < pattern.size() && std::isdigit(pattern.at(printfIt),loc))
-            {
+            for (printfIt = patternIt + 1;
+                 printfIt < pattern.size() && std::isdigit(pattern.at(printfIt),loc);
+                 ++printfIt) {
                 digitStr.push_back(pattern.at(printfIt));
-                ++printfIt;
                 ++printfLikeVariableSize;
             }
 
@@ -508,8 +507,8 @@ static bool matchesPattern_v2(const std::string& filename,
         }
 
 
-        if (sharpCount > 0) ///If we found #
-        {
+        if (sharpCount > 0) { ///If we found #
+
             ///There cannot be another variable!
             assert(!foundPrintFLikeSyntax && !foundLongView && !foundShortView);
             size_t endHashTag;
@@ -624,9 +623,9 @@ static bool matchesPattern_v2(const std::string& filename,
 
     bool fileNameAtEnd =  filenameIt >= filenameCpy.size();
     bool patternAtEnd =  patternIt >= pattern.size();
-     if (!fileNameAtEnd || !patternAtEnd) {
-         return false;
-     }
+    if (!fileNameAtEnd || !patternAtEnd) {
+        return false;
+    }
 
     return true ;
 }
@@ -696,7 +695,8 @@ FileNameContent::~FileNameContent() {
     delete _imp;
 }
 
-void FileNameContent::operator=(const FileNameContent& other) {
+void FileNameContent::operator=(const FileNameContent& other)
+{
     _imp->orderedElements = other._imp->orderedElements;
     _imp->absoluteFileName = other._imp->absoluteFileName;
     _imp->filename = other._imp->filename;
@@ -706,15 +706,15 @@ void FileNameContent::operator=(const FileNameContent& other) {
     _imp->generatedPattern = other._imp->generatedPattern;
 }
 
-void FileNameContentPrivate::parse(const std::string& absoluteFileName) {
+void FileNameContentPrivate::parse(const std::string& absoluteFileName)
+{
     this->absoluteFileName = absoluteFileName;
     filename = absoluteFileName;
     filePath = removePath(filename);
 
-    int i = 0;
     std::string lastNumberStr;
     std::string lastTextPart;
-    while (i < (int)filename.size()) {
+    for (size_t i = 0; i < filename.size(); ++i) {
         const char& c = filename.at(i);
         if (std::isdigit(c,std::locale())) {
             lastNumberStr += c;
@@ -735,7 +735,6 @@ void FileNameContentPrivate::parse(const std::string& absoluteFileName) {
 
             lastTextPart.push_back(c);
         }
-        ++i;
     }
 
     if (!lastNumberStr.empty()) {
@@ -752,22 +751,21 @@ void FileNameContentPrivate::parse(const std::string& absoluteFileName) {
         lastTextPart.clear();
     }
 
-
-
     size_t lastDotPos = filename.find_last_of('.');
     if (lastDotPos != std::string::npos) {
-        int j = filename.size() - 1;
-        while (j > 0 && filename.at(j) != '.') {
+        for (ssize_t j = filename.size() - 1;
+             j > 0 && filename.at(j) != '.';
+             --j) {
             extension.insert(0,1,filename.at(j));
-            --j;
         }
     }
 
 }
 
-StringList FileNameContent::getAllTextElements() const {
+StringList FileNameContent::getAllTextElements() const
+{
     StringList ret;
-    for (unsigned int i = 0; i < _imp->orderedElements.size(); ++i) {
+    for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
         if (_imp->orderedElements[i].type == FileNameElement::TEXT) {
             ret.push_back(_imp->orderedElements[i].data);
         }
@@ -778,25 +776,29 @@ StringList FileNameContent::getAllTextElements() const {
 /**
      * @brief Returns the file path, e.g: /Users/Lala/Pictures/ with the trailing separator.
      **/
-const std::string& FileNameContent::getPath() const {
+const std::string& FileNameContent::getPath() const
+{
     return _imp->filePath;
 }
 
 /**
      * @brief Returns the filename without its path.
      **/
-const std::string& FileNameContent::fileName() const {
+const std::string& FileNameContent::fileName() const
+{
     return _imp->filename;
 }
 
 /**
      * @brief Returns the absolute filename as it was given in the constructor arguments.
      **/
-const std::string& FileNameContent::absoluteFileName() const {
+const std::string& FileNameContent::absoluteFileName() const
+{
     return _imp->absoluteFileName;
 }
 
-const std::string& FileNameContent::getExtension() const {
+const std::string& FileNameContent::getExtension() const
+{
     return _imp->extension;
 }
 
@@ -804,16 +806,18 @@ const std::string& FileNameContent::getExtension() const {
 /**
      * @brief Returns true if a single number was found in the filename.
      **/
-bool FileNameContent::hasSingleNumber() const {
+bool FileNameContent::hasSingleNumber() const
+{
     return _imp->hasSingleNumber;
 }
 
 /**
      * @brief Returns true if the filename is composed only of digits.
      **/
-bool FileNameContent::isFileNameComposedOnlyOfDigits() const {
-    if ((_imp->orderedElements.size() == 1 || _imp->orderedElements.size() == 2)
-            && _imp->orderedElements[0].type == FileNameElement::FRAME_NUMBER) {
+bool FileNameContent::isFileNameComposedOnlyOfDigits() const
+{
+    if ((_imp->orderedElements.size() == 1 || _imp->orderedElements.size() == 2) &&
+        _imp->orderedElements[0].type == FileNameElement::FRAME_NUMBER) {
         return true;
     } else {
         return false;
@@ -823,11 +827,12 @@ bool FileNameContent::isFileNameComposedOnlyOfDigits() const {
 /**
      * @brief Returns the file pattern found in the filename with hash characters style for frame number (i.e: ###)
      **/
-const std::string& FileNameContent::getFilePattern() const {
+const std::string& FileNameContent::getFilePattern() const
+{
     if (_imp->generatedPattern.empty()) {
         ///now build the generated pattern with the ordered elements.
         int numberIndex = 0;
-        for (unsigned int j = 0; j < _imp->orderedElements.size(); ++j) {
+        for (size_t j = 0; j < _imp->orderedElements.size(); ++j) {
             const FileNameElement& e = _imp->orderedElements[j];
             switch (e.type) {
                 case FileNameElement::TEXT:
@@ -858,10 +863,10 @@ const std::string& FileNameContent::getFilePattern() const {
      * If Index is greater than the number of numbers in the filename or if this filename doesn't
      * contain any number, this function returns false.
      **/
-bool FileNameContent::getNumberByIndex(int index,std::string* numberString) const {
-
+bool FileNameContent::getNumberByIndex(int index, std::string* numberString) const
+{
     int numbersElementsIndex = 0;
-    for (unsigned int i = 0; i < _imp->orderedElements.size(); ++i) {
+    for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
         if (_imp->orderedElements[i].type == FileNameElement::FRAME_NUMBER) {
             if (numbersElementsIndex == index) {
                 *numberString = _imp->orderedElements[i].data;
@@ -876,7 +881,7 @@ bool FileNameContent::getNumberByIndex(int index,std::string* numberString) cons
 int FileNameContent::getPotentialFrameNumbersCount() const
 {
     int count = 0;
-    for (unsigned int i = 0; i < _imp->orderedElements.size(); ++i) {
+    for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
         if (_imp->orderedElements[i].type == FileNameElement::FRAME_NUMBER) {
             ++count;
         }
@@ -893,8 +898,8 @@ int FileNameContent::getPotentialFrameNumbersCount() const
      * numberIndexToVary would be 1 as the frame number string indentified in that case is the last number.
      * @returns True if it identified 'other' as belonging to the same sequence, false otherwise.
      **/
-bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<int>* numberIndexesToVary) const {
-
+bool FileNameContent::matchesPattern(const FileNameContent& other, std::vector<int>* numberIndexesToVary) const
+{
     const std::vector<FileNameElement>& otherElements = other._imp->orderedElements;
     if (otherElements.size() != _imp->orderedElements.size()) {
         return false;
@@ -907,7 +912,7 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
     int frameNumberIndexStringIndex = -1;
 
     int numbersCount = 0;
-    for (unsigned int i = 0; i < _imp->orderedElements.size(); ++i) {
+    for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
         if (_imp->orderedElements[i].type != otherElements[i].type) {
             return false;
         }
@@ -926,28 +931,28 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
                         if (otherElements[i].data.at(0) == '0' && otherElements[i].data.size() > 1) {
                             valid = false;
                         } else {
-                            int k = 0;
-                            int diff = std::abs((int)_imp->orderedElements[i].data.size()  - (int)otherElements[i].data.size());
-                            while (k < (int)_imp->orderedElements[i].data.size() && k < diff) {
+                            size_t diff = std::abs((int)_imp->orderedElements[i].data.size() - (int)otherElements[i].data.size());
+                            for (size_t k = 0;
+                                 k < _imp->orderedElements[i].data.size() && k < diff;
+                                 ++k) {
                                 if (_imp->orderedElements[i].data.at(k) == '0') {
                                     valid = false;
                                 }
                                 break;
-                                ++k;
                             }
                         }
                     } else {
                         if (_imp->orderedElements[i].data.at(0) == '0' && _imp->orderedElements[i].data.size() > 1) {
                             valid = false;
                         } else {
-                            int k = 0;
-                            int diff = std::abs((int)_imp->orderedElements[i].data.size()  - (int)otherElements[i].data.size());
-                            while (k < (int)otherElements[i].data.size() && k < diff) {
+                            size_t diff = std::abs((int)_imp->orderedElements[i].data.size() - (int)otherElements[i].data.size());
+                            for (size_t k = 0;
+                                 k < otherElements[i].data.size() && k < diff;
+                                 ++k) {
                                 if (otherElements[i].data.at(k) == '0') {
                                     valid = false;
                                 }
                                 break;
-                                ++k;
                             }
                         }
                     }
@@ -981,7 +986,7 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
 //    /// the second one.
 //    std::vector<int> minIndexes;
 //    int minimum = INT_MAX;
-//    for (unsigned int i = 0; i < potentialFrameNumbers.size(); ++i) {
+//    for (size_t i = 0; i < potentialFrameNumbers.size(); ++i) {
 //        int thisNumber = stringToInt(potentialFrameNumbers[i].second.first);
 //        int otherNumber = stringToInt(potentialFrameNumbers[i].second.second);
 //        int diff = std::abs(thisNumber - otherNumber);
@@ -993,7 +998,7 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
 //            minIndexes.push_back(i);
 //        }
 //    }
-//    for (unsigned int i = 0; i < minIndexes.size(); ++i) {
+//    for (size_t i = 0; i < minIndexes.size(); ++i) {
 //        numberIndexesToVary->push_back(potentialFrameNumbers[minIndexes[i]].first);
 //    }
     numberIndexesToVary->push_back(frameNumberIndexStringIndex);
@@ -1001,27 +1006,28 @@ bool FileNameContent::matchesPattern(const FileNameContent& other,std::vector<in
 
 }
 
-void FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<int>& indexes,std::string* pattern) const {
+void FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<int>& indexes, std::string* pattern) const
+{
     int numbersCount = 0;
     size_t lastNumberPos = 0;
     std::string indexedPattern = getFilePattern();
-    for (unsigned int i = 0; i < _imp->orderedElements.size(); ++i) {
+    for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
         if (_imp->orderedElements[i].type == FileNameElement::FRAME_NUMBER) {
             lastNumberPos = findStr(indexedPattern, "#", lastNumberPos,true);
             assert(lastNumberPos != std::string::npos);
 
-            int endTagPos = lastNumberPos;
-            while (endTagPos < (int)indexedPattern.size() && indexedPattern.at(endTagPos) == '#') {
+            size_t endTagPos = lastNumberPos;
+            while (endTagPos < indexedPattern.size() && indexedPattern.at(endTagPos) == '#') {
                 ++endTagPos;
             }
 
             ///assert that the end of the tag is composed of  a digit
-            if (endTagPos < (int)indexedPattern.size()) {
+            if (endTagPos < indexedPattern.size()) {
                 assert(std::isdigit(indexedPattern.at(endTagPos),std::locale()));
             }
 
             bool isNumberAFrameNumber = false;
-            for (unsigned int j = 0; j < indexes.size(); ++j) {
+            for (size_t j = 0; j < indexes.size(); ++j) {
                 if (indexes[j] == numbersCount) {
                     isNumberAFrameNumber = true;
                     break;
@@ -1033,7 +1039,7 @@ void FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<
                 indexedPattern.replace(lastNumberPos, endTagPos - lastNumberPos + 1, _imp->orderedElements[i].data);
             } else {
                 ///remove the index of the tag and keep the tag.
-                if (endTagPos < (int)indexedPattern.size()) {
+                if (endTagPos < indexedPattern.size()) {
                     indexedPattern.erase(endTagPos, 1);
                 }
             }
@@ -1047,15 +1053,15 @@ void FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<
 }
 
 
-std::string removePath(std::string& filename) {
-
+std::string removePath(std::string& filename)
+{
     ///find the last separator
     size_t pos = filename.find_last_of('/');
     if (pos == std::string::npos) {
         //try out \\ char
         pos = filename.find_last_of('\\');
     }
-    if(pos == std::string::npos) {
+    if (pos == std::string::npos) {
         ///couldn't find a path
         return "";
     }
@@ -1065,7 +1071,7 @@ std::string removePath(std::string& filename) {
 }
 
 
-static bool filesListFromPattern_internal(const std::string& pattern,SequenceParsing::SequenceFromPattern* sequence)
+static bool filesListFromPattern_internal(const std::string& pattern, SequenceParsing::SequenceFromPattern* sequence)
 {
     if (pattern.empty()) {
         return false;
@@ -1093,7 +1099,7 @@ static bool filesListFromPattern_internal(const std::string& pattern,SequencePar
 
     std::locale loc;
 
-    for (int i = 0; i < (int)files.size(); ++i) {
+    for (size_t i = 0; i < files.size(); ++i) {
         int frameNumber;
         int viewNumber;
         if (matchesPattern_v2(files.at(i),patternUnPathed,patternExtension,loc,&frameNumber,&viewNumber)) {
@@ -1116,11 +1122,13 @@ static bool filesListFromPattern_internal(const std::string& pattern,SequencePar
     return true;
 }
 
-bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFromPattern* sequence) {
+bool filesListFromPattern(const std::string& pattern, SequenceParsing::SequenceFromPattern* sequence)
+{
     return filesListFromPattern_internal(pattern,sequence);
 }
 
-StringList sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPattern& sequence,int onlyViewIndex ) {
+StringList sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPattern& sequence, int onlyViewIndex)
+{
     StringList ret;
     for (SequenceParsing::SequenceFromPattern::const_iterator it = sequence.begin(); it!=sequence.end(); ++it) {
         const std::map<int,std::string>& views = it->second;
@@ -1135,7 +1143,8 @@ StringList sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPat
     return ret;
 }
 
-std::string generateFileNameFromPattern(const std::string& pattern,int frameNumber,int viewNumber) {
+std::string generateFileNameFromPattern(const std::string& pattern, int frameNumber, int viewNumber)
+{
     std::string patternUnPathed = pattern;
     std::string patternPath = removePath(patternUnPathed);
     std::string patternExtension = removeFileExtension(patternUnPathed);
@@ -1154,7 +1163,7 @@ std::string generateFileNameFromPattern(const std::string& pattern,int frameNumb
 
     std::string output = pattern;
     size_t lastVariablePos = std::string::npos;
-    for (unsigned int i = 0; i < variablesByOrder.size(); ++i) {
+    for (size_t i = 0; i < variablesByOrder.size(); ++i) {
         const std::string& variable = variablesByOrder[i].first;
         lastVariablePos = findStr(output, variable, lastVariablePos != std::string::npos ? lastVariablePos : 0);
 
@@ -1314,7 +1323,7 @@ bool SequenceFromFiles::tryInsertFile(const FileNameContent& file) {
             ///insert the first frame number in the frameIndexes.
             std::string firstFrameNumberStr;
 
-            for (unsigned int i = 0; i < frameNumberIndexes.size(); ++i) {
+            for (size_t i = 0; i < frameNumberIndexes.size(); ++i) {
                 std::string frameNumberStr;
                 bool ok = firstFileContent.getNumberByIndex(_imp->frameNumberStringIndexes[i], &frameNumberStr);
                 if (ok && firstFrameNumberStr.empty()) {
@@ -1333,7 +1342,7 @@ bool SequenceFromFiles::tryInsertFile(const FileNameContent& file) {
 
             std::string firstFrameNumberStr;
 
-            for (unsigned int i = 0; i < frameNumberIndexes.size(); ++i) {
+            for (size_t i = 0; i < frameNumberIndexes.size(); ++i) {
                 std::string frameNumberStr;
                 bool ok = file.getNumberByIndex(_imp->frameNumberStringIndexes[i], &frameNumberStr);
                 if (ok && firstFrameNumberStr.empty()) {
@@ -1427,19 +1436,27 @@ std::string SequenceFromFiles::generateUserFriendlySequencePattern() const {
     std::map<int,std::string>::const_iterator first = _imp->filesMap.begin();
     std::map<int,std::string>::const_iterator cur = first;
     std::map<int,std::string>::const_iterator next = first;
-    ++next;
+    if (next != _imp->filesMap.end()) {
+        ++next;
+    }
     while(first != _imp->filesMap.end()){
 
         int breakCounter = 0;
         while (next != _imp->filesMap.end() && next->first == (cur->first + 1) &&
                /*!(_imp->isInSequence(first)) &&*/ breakCounter < NATRON_DIALOG_MAX_SEQUENCES_HOLE) {
-            ++next;
-            ++cur;
+            if (next != _imp->filesMap.end()) {
+                ++next;
+            }
+            if (cur != _imp->filesMap.end()) {
+                ++cur;
+            }
             ++breakCounter;
         }
         chunks.push_back(std::make_pair(first->first,cur->first));
         first = next;
-        ++next;
+        if (next != _imp->filesMap.end()) {
+            ++next;
+        }
         cur = first;
     }
 
@@ -1450,7 +1467,7 @@ std::string SequenceFromFiles::generateUserFriendlySequencePattern() const {
         pattern += stringFromInt(chunks[0].second);
     } else {
         pattern.append(" ( ");
-        for (unsigned int i = 0 ; i < chunks.size() ; ++i) {
+        for (size_t i = 0 ; i < chunks.size() ; ++i) {
             if (chunks[i].first != chunks[i].second) {
                 pattern += ' ';
                 pattern += stringFromInt(chunks[i].first);
@@ -1467,7 +1484,8 @@ std::string SequenceFromFiles::generateUserFriendlySequencePattern() const {
     return pattern;
 }
 
-std::string SequenceFromFiles::fileExtension() const {
+std::string SequenceFromFiles::fileExtension() const
+{
     if (!empty()) {
         return _imp->sequence[0].getExtension();
     } else {
@@ -1475,7 +1493,8 @@ std::string SequenceFromFiles::fileExtension() const {
     }
 }
 
-std::string SequenceFromFiles::getPath() const {
+std::string SequenceFromFiles::getPath() const
+{
     if (!empty()) {
         return _imp->sequence[0].getPath();
     } else {
