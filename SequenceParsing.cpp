@@ -753,7 +753,7 @@ void FileNameContentPrivate::parse(const std::string& absoluteFileName)
 
     size_t lastDotPos = filename.find_last_of('.');
     if (lastDotPos != std::string::npos) {
-        for (ssize_t j = filename.size() - 1;
+        for (size_t j = filename.size() - 1;
              j > 0 && filename.at(j) != '.';
              --j) {
             extension.insert(0,1,filename.at(j));
