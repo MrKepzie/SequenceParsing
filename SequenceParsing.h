@@ -43,6 +43,7 @@
 #include <vector>
 #include <list>
 #include <string>
+#include <memory>
 
 typedef std::vector<std::string> StringList ;
 namespace SequenceParsing {
@@ -156,10 +157,7 @@ public:
 
 
 private:
-
-
-    FileNameContentPrivate* _imp;
-
+    std::auto_ptr<FileNameContentPrivate> _imp; // PImpl
 };
 
 /**
@@ -308,8 +306,7 @@ public:
     std::string generateUserFriendlySequencePattern() const;
 
 private:
-
-    SequenceFromFilesPrivate* _imp;
+    std::auto_ptr<SequenceFromFilesPrivate> _imp; // PImpl
 };
 
 
