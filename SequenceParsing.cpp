@@ -49,7 +49,7 @@
 #include <locale>
 #include <istream>
 #include <algorithm>
-
+#include <memory>
 
 #include "tinydir/tinydir.h"
 
@@ -689,11 +689,12 @@ FileNameContent::FileNameContent(const FileNameContent& other)
     *this = other;
 }
 
-FileNameContent::~FileNameContent() {
-    delete _imp;
+FileNameContent::~FileNameContent()
+{
 }
 
-void FileNameContent::operator=(const FileNameContent& other)
+void
+FileNameContent::operator=(const FileNameContent& other)
 {
     _imp->orderedElements = other._imp->orderedElements;
     _imp->absoluteFileName = other._imp->absoluteFileName;
@@ -703,7 +704,8 @@ void FileNameContent::operator=(const FileNameContent& other)
     _imp->generatedPattern = other._imp->generatedPattern;
 }
 
-void FileNameContentPrivate::parse(const std::string& absoluteFileName)
+void
+FileNameContentPrivate::parse(const std::string& absoluteFileName)
 {
     this->absoluteFileName = absoluteFileName;
     filename = absoluteFileName;
@@ -751,7 +753,8 @@ void FileNameContentPrivate::parse(const std::string& absoluteFileName)
 /**
      * @brief Returns the file path, e.g: /Users/Lala/Pictures/ with the trailing separator.
      **/
-const std::string& FileNameContent::getPath() const
+const std::string&
+FileNameContent::getPath() const
 {
     return _imp->filePath;
 }
@@ -759,7 +762,8 @@ const std::string& FileNameContent::getPath() const
 /**
      * @brief Returns the filename without its path.
      **/
-const std::string& FileNameContent::fileName() const
+const std::string&
+FileNameContent::fileName() const
 {
     return _imp->filename;
 }
@@ -767,12 +771,14 @@ const std::string& FileNameContent::fileName() const
 /**
      * @brief Returns the absolute filename as it was given in the constructor arguments.
      **/
-const std::string& FileNameContent::absoluteFileName() const
+const std::string&
+FileNameContent::absoluteFileName() const
 {
     return _imp->absoluteFileName;
 }
 
-const std::string& FileNameContent::getExtension() const
+const std::string&
+FileNameContent::getExtension() const
 {
     return _imp->extension;
 }
@@ -781,7 +787,8 @@ const std::string& FileNameContent::getExtension() const
 /**
      * @brief Returns the file pattern found in the filename with hash characters style for frame number (i.e: ###)
      **/
-const std::string& FileNameContent::getFilePattern() const
+const std::string&
+FileNameContent::getFilePattern() const
 {
     if (_imp->generatedPattern.empty()) {
         ///now build the generated pattern with the ordered elements.
@@ -817,7 +824,9 @@ const std::string& FileNameContent::getFilePattern() const
      * If Index is greater than the number of numbers in the filename or if this filename doesn't
      * contain any number, this function returns false.
      **/
-bool FileNameContent::getNumberByIndex(int index, std::string* numberString) const
+bool
+FileNameContent::getNumberByIndex(int index,
+                                  std::string* numberString) const
 {
     int numbersElementsIndex = 0;
     for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
@@ -831,7 +840,6 @@ bool FileNameContent::getNumberByIndex(int index, std::string* numberString) con
     }
     return false;
 }
-
 
 /**
      * @brief Given the pattern of this file, it tries to match the other file name to this
@@ -1203,8 +1211,8 @@ SequenceFromFiles::SequenceFromFiles(const FileNameContent& firstFile,  bool ena
     }
 }
 
-SequenceFromFiles::~SequenceFromFiles() {
-    delete _imp;
+SequenceFromFiles::~SequenceFromFiles()
+    {
 }
 
 SequenceFromFiles::SequenceFromFiles(const SequenceFromFiles& other)
@@ -1213,7 +1221,9 @@ SequenceFromFiles::SequenceFromFiles(const SequenceFromFiles& other)
     *this = other;
 }
 
-void SequenceFromFiles::operator=(const SequenceFromFiles& other) const {
+void
+SequenceFromFiles::operator=(const SequenceFromFiles& other) const
+{
     _imp->sequence = other._imp->sequence;
     _imp->filesMap = other._imp->filesMap;
     _imp->frameNumberStringIndex = other._imp->frameNumberStringIndex;
@@ -1311,11 +1321,15 @@ int SequenceFromFiles::count() const {
     return (int)_imp->filesMap.size();
 }
 
-bool SequenceFromFiles::isSingleFile() const {
+bool
+SequenceFromFiles::isSingleFile() const
+{
     return _imp->sequence.size() == 1;
 }
 
-int SequenceFromFiles::getFirstFrame() const {
+int
+SequenceFromFiles::getFirstFrame() const
+{
     if (_imp->filesMap.empty()) {
         return INT_MIN;
     } else {
@@ -1323,7 +1337,9 @@ int SequenceFromFiles::getFirstFrame() const {
     }
 }
 
-int SequenceFromFiles::getLastFrame() const {
+int
+SequenceFromFiles::getLastFrame() const
+{
     if (_imp->filesMap.empty()) {
         return INT_MAX;
     } else {
@@ -1333,7 +1349,9 @@ int SequenceFromFiles::getLastFrame() const {
     }
 }
 
-const std::map<int,std::string>& SequenceFromFiles::getFrameIndexes() const {
+const std::map<int,std::string>&
+SequenceFromFiles::getFrameIndexes() const
+{
     return _imp->filesMap;
 }
 
@@ -1341,7 +1359,8 @@ unsigned long long SequenceFromFiles::getEstimatedTotalSize() const {
     return _imp->totalSize;
 }
 
-std::string SequenceFromFiles::generateValidSequencePattern() const
+std::string
+SequenceFromFiles::generateValidSequencePattern() const
 {
     if (empty()) {
         return "";
@@ -1355,7 +1374,9 @@ std::string SequenceFromFiles::generateValidSequencePattern() const
     return firstFramePattern;
 }
 
-std::string SequenceFromFiles::generateUserFriendlySequencePattern() const {
+std::string
+SequenceFromFiles::generateUserFriendlySequencePattern() const
+{
     if (isSingleFile()) {
         return _imp->sequence[0].fileName();
     }
@@ -1370,8 +1391,7 @@ std::string SequenceFromFiles::generateUserFriendlySequencePattern() const {
     if (next != _imp->filesMap.end()) {
         ++next;
     }
-    while(first != _imp->filesMap.end()){
-
+    while (first != _imp->filesMap.end()) {
         int breakCounter = 0;
         while (next != _imp->filesMap.end() && next->first == (cur->first + 1) &&
                /*!(_imp->isInSequence(first)) &&*/ breakCounter < NATRON_DIALOG_MAX_SEQUENCES_HOLE) {
@@ -1415,7 +1435,8 @@ std::string SequenceFromFiles::generateUserFriendlySequencePattern() const {
     return pattern;
 }
 
-std::string SequenceFromFiles::fileExtension() const
+std::string
+SequenceFromFiles::fileExtension() const
 {
     if (!empty()) {
         return _imp->sequence[0].getExtension();
@@ -1424,7 +1445,8 @@ std::string SequenceFromFiles::fileExtension() const
     }
 }
 
-std::string SequenceFromFiles::getPath() const
+std::string
+SequenceFromFiles::getPath() const
 {
     if (!empty()) {
         return _imp->sequence[0].getPath();
@@ -1433,7 +1455,8 @@ std::string SequenceFromFiles::getPath() const
     }
 }
 
-bool SequenceFromFiles::getSequenceOutOfFile(const std::string& absoluteFileName,SequenceFromFiles* sequence)
+bool
+SequenceFromFiles::getSequenceOutOfFile(const std::string& absoluteFileName,SequenceFromFiles* sequence)
 {
     FileNameContent firstFile(absoluteFileName);
     sequence->tryInsertFile(firstFile);
