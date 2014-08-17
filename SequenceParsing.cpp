@@ -841,6 +841,17 @@ FileNameContent::getNumberByIndex(int index,
     return false;
 }
 
+int FileNameContent::getPotentialFrameNumbersCount() const
+{
+    int count = 0;
+    for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
+        if (_imp->orderedElements[i].type == FileNameElement::FRAME_NUMBER) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 /**
      * @brief Given the pattern of this file, it tries to match the other file name to this
      * pattern.
