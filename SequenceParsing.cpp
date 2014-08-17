@@ -1244,7 +1244,7 @@ SequenceFromFiles::operator=(const SequenceFromFiles& other) const
 
 bool SequenceFromFiles::tryInsertFile(const FileNameContent& file, bool checkPath) {
 
-    if (_imp->filesMap.empty()) {
+    if (_imp->sequence.empty()) {
         ///Special case when the sequence is empty, we don't have anything to match against.
         _imp->sequence.push_back(file);
         if (_imp->sizeEstimationEnabled) {
