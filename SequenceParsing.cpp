@@ -1316,10 +1316,8 @@ bool SequenceFromFiles::tryInsertFile(const FileNameContent& file, bool checkPat
 }
 
 bool SequenceFromFiles::contains(const std::string& absoluteFileName) const {
-    std::string cpy = absoluteFileName;
-    removePath(cpy);
-    for (std::map<int,std::string>::iterator it = _imp->filesMap.begin();it!=_imp->filesMap.end();++it) {
-        if (it->second == cpy) {
+    for (std::vector < FileNameContent >::const_iterator it = _imp->sequence.begin();it!=_imp->sequence.end();++it) {
+        if (it->absoluteFileName() == absoluteFileName) {
             return true;
         }
     }
