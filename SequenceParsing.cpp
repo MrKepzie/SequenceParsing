@@ -661,7 +661,6 @@ struct FileNameContentPrivate {
     std::string filePath; //< the filepath
     std::string filename; //< the filename without path
     std::string extension; //< the file extension
-    bool hasSingleNumber;
     std::string generatedPattern;
 
     FileNameContentPrivate()
@@ -670,7 +669,6 @@ struct FileNameContentPrivate {
         , filePath()
         , filename()
         , extension()
-        , hasSingleNumber(false)
         , generatedPattern()
     {
     }
@@ -702,7 +700,6 @@ void FileNameContent::operator=(const FileNameContent& other)
     _imp->filename = other._imp->filename;
     _imp->filePath = other._imp->filePath;
     _imp->extension = other._imp->extension;
-    _imp->hasSingleNumber = other._imp->hasSingleNumber;
     _imp->generatedPattern = other._imp->generatedPattern;
 }
 
@@ -725,11 +722,6 @@ void FileNameContentPrivate::parse(const std::string& absoluteFileName)
         } else {
             if (!lastNumberStr.empty()) {
                 orderedElements.push_back(FileNameElement(lastNumberStr,FileNameElement::FRAME_NUMBER));
-                if (!hasSingleNumber) {
-                    hasSingleNumber = true;
-                } else {
-                    hasSingleNumber = false;
-                }
                 lastNumberStr.clear();
             }
 
@@ -739,11 +731,6 @@ void FileNameContentPrivate::parse(const std::string& absoluteFileName)
 
     if (!lastNumberStr.empty()) {
         orderedElements.push_back(FileNameElement(lastNumberStr,FileNameElement::FRAME_NUMBER));
-        if (!hasSingleNumber) {
-            hasSingleNumber = true;
-        } else {
-            hasSingleNumber = false;
-        }
         lastNumberStr.clear();
     }
     if (!lastTextPart.empty()) {
@@ -759,17 +746,6 @@ void FileNameContentPrivate::parse(const std::string& absoluteFileName)
         extension = filename.substr(lastDotPos+1);
     }
 
-}
-
-StringList FileNameContent::getAllTextElements() const
-{
-    StringList ret;
-    for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
-        if (_imp->orderedElements[i].type == FileNameElement::TEXT) {
-            ret.push_back(_imp->orderedElements[i].data);
-        }
-    }
-    return ret;
 }
 
 /**
@@ -801,27 +777,6 @@ const std::string& FileNameContent::getExtension() const
     return _imp->extension;
 }
 
-
-/**
-     * @brief Returns true if a single number was found in the filename.
-     **/
-bool FileNameContent::hasSingleNumber() const
-{
-    return _imp->hasSingleNumber;
-}
-
-/**
-     * @brief Returns true if the filename is composed only of digits.
-     **/
-bool FileNameContent::isFileNameComposedOnlyOfDigits() const
-{
-    if ((_imp->orderedElements.size() == 1 || _imp->orderedElements.size() == 2) &&
-        _imp->orderedElements[0].type == FileNameElement::FRAME_NUMBER) {
-        return true;
-    } else {
-        return false;
-    }
-}
 
 /**
      * @brief Returns the file pattern found in the filename with hash characters style for frame number (i.e: ###)
@@ -877,16 +832,6 @@ bool FileNameContent::getNumberByIndex(int index, std::string* numberString) con
     return false;
 }
 
-int FileNameContent::getPotentialFrameNumbersCount() const
-{
-    int count = 0;
-    for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
-        if (_imp->orderedElements[i].type == FileNameElement::FRAME_NUMBER) {
-            ++count;
-        }
-    }
-    return count;
-}
 
 /**
      * @brief Given the pattern of this file, it tries to match the other file name to this
@@ -897,7 +842,7 @@ int FileNameContent::getPotentialFrameNumbersCount() const
      * numberIndexToVary would be 1 as the frame number string indentified in that case is the last number.
      * @returns True if it identified 'other' as belonging to the same sequence, false otherwise.
      **/
-bool FileNameContent::matchesPattern(const FileNameContent& other, std::vector<int>* numberIndexesToVary) const
+bool FileNameContent::matchesPattern(const FileNameContent& other, int* numberIndexToVary) const
 {
     const std::vector<FileNameElement>& otherElements = other._imp->orderedElements;
     if (otherElements.size() != _imp->orderedElements.size()) {
@@ -907,8 +852,8 @@ bool FileNameContent::matchesPattern(const FileNameContent& other, std::vector<i
 
     ///We only consider the last potential frame number
     ///
+    *numberIndexToVary = -1;
     int nbVaryingFrameNumbers = 0;
-    int frameNumberIndexStringIndex = -1;
 
     int numbersCount = 0;
     for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
@@ -958,7 +903,7 @@ bool FileNameContent::matchesPattern(const FileNameContent& other, std::vector<i
 
                 }
                 if (valid) {
-                   frameNumberIndexStringIndex = numbersCount;
+                   *numberIndexToVary = numbersCount;
                    ++nbVaryingFrameNumbers;
                 }
 
@@ -970,7 +915,7 @@ bool FileNameContent::matchesPattern(const FileNameContent& other, std::vector<i
     }
     ///strings are identical
     /// we only accept files with 1 varying number
-    if (frameNumberIndexStringIndex == -1 || nbVaryingFrameNumbers != 1) {
+    if (*numberIndexToVary == -1 || nbVaryingFrameNumbers != 1) {
         return false;
     }
 
@@ -1000,12 +945,11 @@ bool FileNameContent::matchesPattern(const FileNameContent& other, std::vector<i
 //    for (size_t i = 0; i < minIndexes.size(); ++i) {
 //        numberIndexesToVary->push_back(potentialFrameNumbers[minIndexes[i]].first);
 //    }
-    numberIndexesToVary->push_back(frameNumberIndexStringIndex);
     return true;
 
 }
 
-void FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<int>& indexes, std::string* pattern) const
+void FileNameContent::generatePatternWithFrameNumberAtIndex(int index, std::string* pattern) const
 {
     int numbersCount = 0;
     size_t lastNumberPos = 0;
@@ -1025,23 +969,18 @@ void FileNameContent::generatePatternWithFrameNumberAtIndexes(const std::vector<
                 assert(std::isdigit(indexedPattern.at(endTagPos),std::locale()));
             }
 
-            bool isNumberAFrameNumber = false;
-            for (size_t j = 0; j < indexes.size(); ++j) {
-                if (indexes[j] == numbersCount) {
-                    isNumberAFrameNumber = true;
-                    break;
-                }
-            }
-            if (!isNumberAFrameNumber) {
-                ///if this is not the number we're interested in to keep the ###, just expand the variable
-                ///replace the whole tag with the original data
-                indexedPattern.replace(lastNumberPos, endTagPos - lastNumberPos + 1, _imp->orderedElements[i].data);
-            } else {
+            if (index == numbersCount) {
                 ///remove the index of the tag and keep the tag.
                 if (endTagPos < indexedPattern.size()) {
                     indexedPattern.erase(endTagPos, 1);
                 }
+                break;
+            } else {
+                ///if this is not the number we're interested in to keep the ###, just expand the variable
+                ///replace the whole tag with the original data
+                indexedPattern.replace(lastNumberPos, endTagPos - lastNumberPos + 1, _imp->orderedElements[i].data);
             }
+
             lastNumberPos = endTagPos;
 
             ++numbersCount;
@@ -1223,14 +1162,11 @@ struct SequenceFromFilesPrivate
     /// the parsed files that have matching content with respect to variables.
     std::vector < FileNameContent > sequence;
 
-    ///a list with all the files in the sequence, with their absolute file names.
-    StringList filesList;
-
     ///all the files mapped to their index
     std::map<int,std::string> filesMap;
 
     /// The index of the frame number string in case there're several numbers in a filename.
-    std::vector<int> frameNumberStringIndexes;
+    int frameNumberStringIndex;
 
     unsigned long long totalSize;
 
@@ -1238,9 +1174,8 @@ struct SequenceFromFilesPrivate
 
     SequenceFromFilesPrivate(bool enableSizeEstimation)
         : sequence()
-        , filesList()
         , filesMap()
-        , frameNumberStringIndexes()
+        , frameNumberStringIndex(-1)
         , totalSize(0)
         , sizeEstimationEnabled(enableSizeEstimation)
     {
@@ -1262,7 +1197,6 @@ SequenceFromFiles::SequenceFromFiles(const FileNameContent& firstFile,  bool ena
     : _imp(new SequenceFromFilesPrivate(enableSizeEstimation))
 {
     _imp->sequence.push_back(firstFile);
-    _imp->filesList.push_back(firstFile.absoluteFileName());
     if (enableSizeEstimation) {
         std::ifstream file(firstFile.absoluteFileName().c_str(), std::ios::binary | std::ios::ate);
         _imp->totalSize += file.tellg();
@@ -1281,18 +1215,17 @@ SequenceFromFiles::SequenceFromFiles(const SequenceFromFiles& other)
 
 void SequenceFromFiles::operator=(const SequenceFromFiles& other) const {
     _imp->sequence = other._imp->sequence;
-    _imp->filesList = other._imp->filesList;
     _imp->filesMap = other._imp->filesMap;
-    _imp->frameNumberStringIndexes = other._imp->frameNumberStringIndexes;
+    _imp->frameNumberStringIndex = other._imp->frameNumberStringIndex;
     _imp->totalSize = other._imp->totalSize;
     _imp->sizeEstimationEnabled = other._imp->sizeEstimationEnabled;
 }
 
-bool SequenceFromFiles::tryInsertFile(const FileNameContent& file) {
+bool SequenceFromFiles::tryInsertFile(const FileNameContent& file, bool checkPath) {
 
-    if (_imp->filesList.empty()) {
+    if (_imp->filesMap.empty()) {
+        ///Special case when the sequence is empty, we don't have anything to match against.
         _imp->sequence.push_back(file);
-        _imp->filesList.push_back(file.absoluteFileName());
         if (_imp->sizeEstimationEnabled) {
             std::ifstream f(file.absoluteFileName().c_str(), std::ios::binary | std::ios::ate);
             _imp->totalSize += f.tellg();
@@ -1300,79 +1233,82 @@ bool SequenceFromFiles::tryInsertFile(const FileNameContent& file) {
         return true;
     }
 
-    if (file.getPath() != _imp->sequence[0].getPath()) {
+    if (checkPath && file.getPath() != _imp->sequence[0].getPath()) {
         return false;
     }
 
-    std::vector<int> frameNumberIndexes;
+    ///If the filename has several numbers, such as toto11_titi22.jpg
+    ///This corresponds to the index of the number in which the frame number is expected to be.
+    ///e.g in this example if 22 would be the frame number, frameNumberIndex would be 1.
+    int frameNumberIndex;
+
     bool insert = false;
     const  FileNameContent& firstFileContent = _imp->sequence[0];
-    if (file.matchesPattern(firstFileContent, &frameNumberIndexes)) {
+    if (file.matchesPattern(firstFileContent, &frameNumberIndex)) {
 
-        if (std::find(_imp->filesList.begin(),_imp->filesList.end(),file.absoluteFileName()) != _imp->filesList.end()) {
-            return false;
-        }
-
-        if (_imp->frameNumberStringIndexes.empty()) {
+        if (_imp->frameNumberStringIndex == -1) {
             ///this is the second file we add to the sequence, we can now
             ///determine where is the frame number string placed.
-            _imp->frameNumberStringIndexes = frameNumberIndexes;
+            _imp->frameNumberStringIndex = frameNumberIndex;
             insert = true;
 
-            ///insert the first frame number in the frameIndexes.
-            std::string firstFrameNumberStr;
-
-            for (size_t i = 0; i < frameNumberIndexes.size(); ++i) {
-                std::string frameNumberStr;
-                bool ok = firstFileContent.getNumberByIndex(_imp->frameNumberStringIndexes[i], &frameNumberStr);
-                if (ok && firstFrameNumberStr.empty()) {
-                    _imp->filesMap.insert(std::make_pair(stringToInt(frameNumberStr),firstFileContent.absoluteFileName()));
-                    firstFrameNumberStr = frameNumberStr;
-                } else if (!firstFrameNumberStr.empty() && stringToInt(frameNumberStr) != stringToInt(firstFrameNumberStr)) {
-                    return false;
-                }
+            ///insert the first frame number in the map
+            std::string frameNumberStr;
+            bool ok = firstFileContent.getNumberByIndex(_imp->frameNumberStringIndex, &frameNumberStr);
+            if (ok) {
+                _imp->filesMap.insert(std::make_pair(stringToInt(frameNumberStr),firstFileContent.absoluteFileName()));
+            } else {
+                return false;
             }
 
-
-        } else if(frameNumberIndexes == _imp->frameNumberStringIndexes) {
+        } else if(frameNumberIndex == _imp->frameNumberStringIndex) {
             insert = true;
         }
+
         if (insert) {
+            std::string frameNumberStr;
+            bool ok = file.getNumberByIndex(_imp->frameNumberStringIndex, &frameNumberStr);
+            if (ok) {
 
-            std::string firstFrameNumberStr;
+                std::pair<std::map<int,std::string>::iterator,bool> success =
+                        _imp->filesMap.insert(std::make_pair(stringToInt(frameNumberStr),file.absoluteFileName()));
 
-            for (size_t i = 0; i < frameNumberIndexes.size(); ++i) {
-                std::string frameNumberStr;
-                bool ok = file.getNumberByIndex(_imp->frameNumberStringIndexes[i], &frameNumberStr);
-                if (ok && firstFrameNumberStr.empty()) {
+                ///Insert might have failed because we didn't check prior to this whether the file was already
+                ///present or not.
+                if (success.second) {
                     _imp->sequence.push_back(file);
-                    _imp->filesList.push_back(file.absoluteFileName());
-                    _imp->filesMap.insert(std::make_pair(stringToInt(frameNumberStr),file.absoluteFileName()));
                     if (_imp->sizeEstimationEnabled) {
                         std::ifstream f(file.absoluteFileName().c_str(), std::ios::binary | std::ios::ate);
                         _imp->totalSize += f.tellg();
                     }
-
-                    firstFrameNumberStr = frameNumberStr;
-                } else if (!firstFrameNumberStr.empty() && stringToInt(frameNumberStr) != stringToInt(firstFrameNumberStr)) {
+                } else {
                     return false;
                 }
+
+            } else {
+                return false;
             }
         }
+
     }
     return insert;
 }
 
 bool SequenceFromFiles::contains(const std::string& absoluteFileName) const {
-    return std::find(_imp->filesList.begin(),_imp->filesList.end(),absoluteFileName) != _imp->filesList.end();
+    for (std::map<int,std::string>::iterator it = _imp->filesMap.begin();it!=_imp->filesMap.end();++it) {
+        if (it->second == absoluteFileName) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool SequenceFromFiles::empty() const {
-    return _imp->filesList.empty();
+    return _imp->filesMap.empty();
 }
 
 int SequenceFromFiles::count() const {
-    return (int)_imp->filesList.size();
+    return (int)_imp->filesMap.size();
 }
 
 bool SequenceFromFiles::isSingleFile() const {
@@ -1401,10 +1337,6 @@ const std::map<int,std::string>& SequenceFromFiles::getFrameIndexes() const {
     return _imp->filesMap;
 }
 
-const StringList& SequenceFromFiles::getFilesList() const {
-    return _imp->filesList;
-}
-
 unsigned long long SequenceFromFiles::getEstimatedTotalSize() const {
     return _imp->totalSize;
 }
@@ -1419,7 +1351,7 @@ std::string SequenceFromFiles::generateValidSequencePattern() const
     }
     assert(_imp->filesMap.size() >= 2);
     std::string firstFramePattern ;
-    _imp->sequence[0].generatePatternWithFrameNumberAtIndexes(_imp->frameNumberStringIndexes, &firstFramePattern);
+    _imp->sequence[0].generatePatternWithFrameNumberAtIndex(_imp->frameNumberStringIndex, &firstFramePattern);
     return firstFramePattern;
 }
 

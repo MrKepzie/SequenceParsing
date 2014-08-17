@@ -68,12 +68,6 @@ public:
     void operator=(const FileNameContent& other);
 
     /**
-         * @brief Returns all the text parts that compose that file name.
-         * eg: for blabla5.tif it would return "blabla"  ".tif"
-         **/
-    StringList getAllTextElements() const;
-
-    /**
          * @brief Returns the file path, e.g: /Users/Lala/Pictures/ with the trailing separator.
          **/
     const std::string& getPath() const;
@@ -93,15 +87,6 @@ public:
          **/
     const std::string& getExtension() const;
 
-    /**
-         * @brief Returns true if a single number was found in the filename.
-         **/
-    bool hasSingleNumber() const;
-
-    /**
-         * @brief Returns true if the filename is composed only of digits.
-         **/
-    bool isFileNameComposedOnlyOfDigits() const;
 
     /**
          * @brief Returns the file pattern found in the filename with hash characters style for frame number (i.e: ###)
@@ -124,7 +109,7 @@ public:
          * function return false. Otherwise it returns true.
          * The pattern will have its file path prepended so it is absolute.
          **/
-    void generatePatternWithFrameNumberAtIndexes(const std::vector<int>& indexes,std::string* pattern) const;
+    void generatePatternWithFrameNumberAtIndex(int index,std::string* pattern) const;
 
     /**
          * @brief If the filename is composed of several numbers (e.g: file08_001.png),
@@ -133,13 +118,6 @@ public:
          * contain any number, this function returns false.
          **/
     bool getNumberByIndex(int index,std::string* numberString) const;
-
-    /**
-      * @brief Returns the number of potential frame numbers the filename is composed of.
-      * e.g: file08_001.png would return 2.
-    **/
-    int getPotentialFrameNumbersCount() const;
-
 
     /**
          * @brief Given the pattern of this file, it tries to match the other file name to this
@@ -152,7 +130,7 @@ public:
          * @returns True if it identified 'other' as belonging to the same sequence, false otherwise.
          * Note that this function will return false if this and other are exactly the same.
          **/
-    bool matchesPattern(const FileNameContent& other,std::vector<int>* numberIndexesToVary) const;
+    bool matchesPattern(const FileNameContent& other,int* numberIndexToVary) const;
 
 
 private:
@@ -261,7 +239,9 @@ public:
 
     ///Tries to insert a file in the sequence and returns true if it succeeded,
     ///indicating that the file matches the sequence or it is already contained in this sequence.
-    bool tryInsertFile(const FileNameContent& file);
+    ///@param checkPath If true then this function will check if the path of the file is the same as
+    ///the sequence
+    bool tryInsertFile(const FileNameContent& file,bool checkPath = true);
 
     ///Returns true if this sequence contains the given file.
     bool contains(const std::string& absoluteFileName) const;
@@ -289,8 +269,6 @@ public:
 
     ///all the frame indexes. Empty if this is not a sequence.
     const std::map<int,std::string>& getFrameIndexes() const;
-
-    const StringList& getFilesList() const;
 
     ///Returns the total cumulated size of all files in the sequence.
     ///If enableSizeEstimation is false, it will return 0.
