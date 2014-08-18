@@ -993,7 +993,6 @@ void FileNameContent::generatePatternWithFrameNumberAtIndex(int index, std::stri
                 if (endTagPos < indexedPattern.size()) {
                     indexedPattern.erase(endTagPos, 1);
                 }
-                break;
             } else {
                 ///if this is not the number we're interested in to keep the ###, just expand the variable
                 ///replace the whole tag with the original data
