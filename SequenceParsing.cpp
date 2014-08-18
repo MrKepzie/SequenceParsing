@@ -1325,11 +1325,11 @@ bool SequenceFromFiles::contains(const std::string& absoluteFileName) const {
 }
 
 bool SequenceFromFiles::empty() const {
-    return _imp->filesMap.empty();
+    return _imp->sequence.empty();
 }
 
 int SequenceFromFiles::count() const {
-    return (int)_imp->filesMap.size();
+    return (int)_imp->sequence.size();
 }
 
 bool
