@@ -1403,8 +1403,8 @@ SequenceFromFiles::generateUserFriendlySequencePattern() const
     }
     while (first != _imp->filesMap.end()) {
         int breakCounter = 0;
-        while (next != _imp->filesMap.end() && next->first == (cur->first + 1) &&
-               /*!(_imp->isInSequence(first)) &&*/ breakCounter < NATRON_DIALOG_MAX_SEQUENCES_HOLE) {
+        while (next != _imp->filesMap.end() && next->first == (cur->first + 1)/* &&
+               !(_imp->isInSequence(first)) && breakCounter < NATRON_DIALOG_MAX_SEQUENCES_HOLE*/) {
             if (next != _imp->filesMap.end()) {
                 ++next;
             }
