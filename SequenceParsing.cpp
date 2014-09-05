@@ -41,6 +41,7 @@
 #include <cassert>
 #include <cmath>
 #include <climits>
+#include <cctype> // isdigit(c)
 #include <cstddef>
 #include <iostream>
 #include <stdexcept>
@@ -69,6 +70,36 @@ using std::size_t;
 
 namespace  {
 
+#if 0
+// case-insensitive char_traits
+// see http://www.gotw.ca/gotw/029.htm
+// in order to use case insensitive search and compare, all functions should
+// be templated and use basic_string<>:
+// template<class _CharT, class _Traits, class _Allocator>
+// void function(basic_string<_CharT, _Traits, _Allocator>& s, ...)
+//
+struct ci_char_traits : public std::char_traits<char> {
+    static bool eq(char c1, char c2) { return toupper(c1) == toupper(c2); }
+    static bool ne(char c1, char c2) { return toupper(c1) != toupper(c2); }
+    static bool lt(char c1, char c2) { return toupper(c1) <  toupper(c2); }
+    static int compare(const char* s1, const char* s2, size_t n) {
+        while( n-- != 0 ) {
+            if( toupper(*s1) < toupper(*s2) ) return -1;
+            if( toupper(*s1) > toupper(*s2) ) return 1;
+            ++s1; ++s2;
+        }
+        return 0;
+    }
+    static const char* find(const char* s, int n, char a) {
+        while( n-- > 0 && toupper(*s) != toupper(a) ) {
+            ++s;
+        }
+        return s;
+    }
+};
+
+typedef std::basic_string<char, ci_char_traits> ci_string;
+#endif
 
 /**
      * @brief Given the pattern unpathed without extension (e.g: "filename###") and the file extension (e.g "jpg") ; this
@@ -91,7 +122,7 @@ static bool extractCommonPartsAndVariablesFromPattern(const std::string& pattern
     int commonCharactersFound = 0;
     bool previousCharIsSharp = false;
     for (int i = 0; i < (int)patternUnPathedWithoutExt.size(); ++i) {
-        const char& c = patternUnPathedWithoutExt.at(i);
+        const char& c = patternUnPathedWithoutExt[i];
         if (c == '#') {
             if (!commonPart.empty()) {
                 commonParts->push_back(commonPart);
@@ -108,11 +139,11 @@ static bool extractCommonPartsAndVariablesFromPattern(const std::string& pattern
 
             char next = '\0';
             if (i < (int)patternUnPathedWithoutExt.size() - 1) {
-                next = patternUnPathedWithoutExt.at(i + 1);
+                next = patternUnPathedWithoutExt[i + 1];
             }
             char prev = '\0';
             if (i > 0) {
-                prev = patternUnPathedWithoutExt.at(i -1);
+                prev = patternUnPathedWithoutExt[i - 1];
             }
 
             if (next == '\0') {
@@ -184,54 +215,37 @@ static bool extractCommonPartsAndVariablesFromPattern(const std::string& pattern
 }
 
 
-// templated version of my_equal so it could work with both char and wchar_t
-template<typename charT>
-struct my_equal {
-    my_equal( const std::locale& loc ) : loc_(loc) {}
-    bool operator()(charT ch1, charT ch2) {
-        return std::toupper(ch1, loc_) == std::toupper(ch2, loc_);
-    }
-private:
-    const std::locale& loc_;
-};
-
-// find substring (case insensitive)
-template<typename T>
-size_t ci_find_substr( const T& str1, const T& str2, const std::locale& loc = std::locale() )
+static size_t findStr(const std::string& from,
+                      const std::string& toSearch,
+                      int pos)
 {
-    typename T::const_iterator it = std::search( str1.begin(), str1.end(),
-                                                 str2.begin(), str2.end(), my_equal<typename T::value_type>(loc) );
-    if ( it != str1.end() ) return it - str1.begin();
-    else return std::string::npos; // not found
-}
-
-static size_t findStr(const std::string& from,const std::string& toSearch,int pos, bool caseSensitive = false)
-{
-    if (caseSensitive) {
-        return from.find(toSearch,pos);
-    } else {
-        return ci_find_substr<std::string>(from, toSearch);
-    }
+    return from.find(toSearch, pos);
+    // case insensitive version:
+    //return ci_string(from.c_str()).find(toSearch.c_str(), pos);
 }
 
 
-static bool startsWith(const std::string& str,const std::string& prefix,bool caseSensitive = false)
+static bool startsWith(const std::string& str,
+                       const std::string& prefix)
 {
-    return findStr(str,prefix,0,caseSensitive) == 0;
+    return str.substr(0,prefix.size()) == prefix;
+    // case insensitive version:
+    //return ci_string(str.substr(0,prefix.size()).c_str()) == prefix.c_str();
 }
 
 static bool endsWith(const std::string &str, const std::string &suffix)
 {
-    return str.size() >= suffix.size() &&
-            str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+    return ((str.size() < suffix.size()) &&
+            (str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0));
 }
 
-static void removeAllOccurences(std::string& str,const std::string& toRemove,bool caseSensitive = false)
+static void removeAllOccurences(std::string& str,
+                                const std::string& toRemove)
 {
     if (str.size()) {
-        for (size_t i = findStr(str, toRemove, 0, caseSensitive);
+        for (size_t i = findStr(str, toRemove, 0);
              i != std::string::npos;
-             i = findStr(str, toRemove, i,caseSensitive)) {
+             i = findStr(str, toRemove, i)) {
             str.erase(i,toRemove.size());
         }
     }
@@ -293,16 +307,18 @@ static void getFilesFromDir(tinydir_dir& dir,StringList* ret)
     }
 }
 
-static bool matchesHashTag(int sharpCount,const std::string& filename,
-                           size_t startingPos,const std::locale& loc,
-                           size_t *endPos,int* frameNumber)
+static bool matchesHashTag(int sharpCount,
+                           const std::string& filename,
+                           size_t startingPos,
+                           size_t *endPos,
+                           int* frameNumber)
 {
     std::string variable;
     size_t variableIt = startingPos;
     for (variableIt = startingPos;
-         variableIt < filename.size() && std::isdigit(filename.at(variableIt),loc);
+         variableIt < filename.size() && std::isdigit(filename[variableIt]);
          ++variableIt) {
-        variable.push_back(filename.at(variableIt));
+        variable.push_back(filename[variableIt]);
     }
     *endPos = variableIt;
 
@@ -312,7 +328,7 @@ static bool matchesHashTag(int sharpCount,const std::string& filename,
 
     int prepending0s = 0;
     for (size_t i = 0; i < variable.size(); ++i) {
-        if (variable.at(i) != '0') {
+        if (variable[i] != '0') {
             break;
         } else {
             ++prepending0s;
@@ -329,16 +345,18 @@ static bool matchesHashTag(int sharpCount,const std::string& filename,
 
 }
 
-static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
-                                    size_t startingPos,const std::locale& loc,
-                                    size_t *endPos,int* frameNumber)
+static bool matchesPrintfLikeSyntax(int digitsCount,
+                                    const std::string& filename,
+                                    size_t startingPos,
+                                    size_t *endPos,
+                                    int* frameNumber)
 {
     std::string variable;
     size_t variableIt;
     for (variableIt = startingPos;
-         variableIt < filename.size() && std::isdigit(filename.at(variableIt),loc);
+         variableIt < filename.size() && std::isdigit(filename[variableIt]);
          ++variableIt) {
-        variable.push_back(filename.at(variableIt));
+        variable.push_back(filename[variableIt]);
     }
     *endPos = variableIt;
 
@@ -348,7 +366,7 @@ static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
 
     int prepending0s = 0;
     for (size_t i = 0; i < variable.size(); ++i) {
-        if (variable.at(i) != '0') {
+        if (variable[i] != '0') {
             break;
         } else {
             ++prepending0s;
@@ -367,7 +385,6 @@ static bool matchesPrintfLikeSyntax(int digitsCount,const std::string& filename,
 static bool matchesView(bool longView,
                         const std::string& filename,
                         size_t startingPos,
-                        const std::locale& loc,
                         size_t *endPos,
                         int* viewNumber)
 {
@@ -384,8 +401,8 @@ static bool matchesView(bool longView,
             return true;
         } else if (startsWith(mid,"view")) {
             std::string viewNoStr;
-            for (size_t it = 4; it < mid.size() && std::isdigit(mid.at(it),loc); ++it) {
-                viewNoStr.push_back(mid.at(it));
+            for (size_t it = 4; it < mid.size() && std::isdigit(mid[it]); ++it) {
+                viewNoStr.push_back(mid[it]);
             }
             if (!viewNoStr.empty()) {
                 *viewNumber = stringToInt(viewNoStr);
@@ -407,8 +424,8 @@ static bool matchesView(bool longView,
             return true;
         } else if (startsWith(mid,"view")) {
             std::string viewNoStr;
-            for (size_t it = 4; it < mid.size() && std::isdigit(mid.at(it),loc); ++it) {
-                viewNoStr.push_back(mid.at(it));
+            for (size_t it = 4; it < mid.size() && std::isdigit(mid[it]); ++it) {
+                viewNoStr.push_back(mid[it]);
             }
 
             if (!viewNoStr.empty()) {
@@ -426,7 +443,6 @@ static bool matchesView(bool longView,
 static bool matchesPattern_v2(const std::string& filename,
                               const std::string& pattern,
                               const std::string& patternExtension,
-                              const std::locale& loc,
                               int* frameNumber,
                               int* viewNumber)
 {
@@ -450,7 +466,7 @@ static bool matchesPattern_v2(const std::string& filename,
     std::string fileExt = removeFileExtension(filenameCpy);
 
     ///Extensions not matching, exit.
-    if (fileExt != patternExtension) {
+    if (fileExt != patternExtension) { // 
         return false;
     }
 
@@ -462,7 +478,7 @@ static bool matchesPattern_v2(const std::string& filename,
         ///Actually start counting the #
         std::string variable;
         for (size_t sharpIt = patternIt;
-             sharpIt < pattern.size() && pattern.at(sharpIt) == '#';
+             sharpIt < pattern.size() && pattern[sharpIt] == '#';
              ++sharpIt) {
             ++sharpCount;
             variable.push_back('#');
@@ -482,26 +498,26 @@ static bool matchesPattern_v2(const std::string& filename,
 
         ///The number of characters that compose the %04d style variable, this is at least 2 (%d)
         int printfLikeVariableSize = 2;
-        if (pattern.at(patternIt) == '%') {
+        if (pattern[patternIt] == '%') {
             ///We found the '%' digit, start at the character right after to
             ///find digits
             size_t printfIt;
             std::string digitStr;
             for (printfIt = patternIt + 1;
-                 printfIt < pattern.size() && std::isdigit(pattern.at(printfIt),loc);
+                 printfIt < pattern.size() && std::isdigit(pattern[printfIt]);
                  ++printfIt) {
-                digitStr.push_back(pattern.at(printfIt));
+                digitStr.push_back(pattern[printfIt]);
                 ++printfLikeVariableSize;
             }
 
             ///they are no more digit after the '%', check if this is correctly terminating by a 'd' character.
             /// We also treat the view %v and %V cases here
-            if (printfIt < pattern.size() && std::tolower(pattern.at(printfIt),loc) == 'd') {
+            if (printfIt < pattern.size() && std::tolower(pattern[printfIt]) == 'd') {
                 foundPrintFLikeSyntax = true;
                 printfDigitCount = stringToInt(digitStr);
-            } else if (printfIt < pattern.size() && pattern.at(printfIt) == 'V') {
+            } else if (printfIt < pattern.size() && pattern[printfIt] == 'V') {
                 foundLongView = true;
-            } else if (printfIt < pattern.size() && pattern.at(printfIt) == 'v') {
+            } else if (printfIt < pattern.size() && pattern[printfIt] == 'v') {
                 foundShortView = true;
             }
         }
@@ -515,7 +531,7 @@ static bool matchesPattern_v2(const std::string& filename,
             int fNumber;
 
             ///check if the filename matches the number of hashes
-            if (!matchesHashTag(sharpCount,filenameCpy,filenameIt,loc,&endHashTag,&fNumber)) {
+            if (!matchesHashTag(sharpCount, filenameCpy, filenameIt, &endHashTag, &fNumber)) {
                 return false;
             }
 
@@ -540,7 +556,7 @@ static bool matchesPattern_v2(const std::string& filename,
             size_t endPrintfLike;
             int fNumber;
             ///check if the filename matches the %d syntax
-            if (!matchesPrintfLikeSyntax(printfDigitCount,filenameCpy,filenameIt,loc,&endPrintfLike,&fNumber)) {
+            if (!matchesPrintfLikeSyntax(printfDigitCount, filenameCpy, filenameIt, &endPrintfLike, &fNumber)) {
                 return false;
             }
 
@@ -566,7 +582,7 @@ static bool matchesPattern_v2(const std::string& filename,
             size_t endVar;
             int vNumber;
              ///check if the filename matches the %V syntax
-            if (!matchesView(true,filenameCpy,filenameIt,loc,&endVar,&vNumber)) {
+            if (!matchesView(true, filenameCpy, filenameIt, &endVar, &vNumber)) {
                 return false;
             }
 
@@ -592,7 +608,7 @@ static bool matchesPattern_v2(const std::string& filename,
             size_t endVar;
             int vNumber;
             ///check if the filename matches the %v syntax
-            if (!matchesView(false,filenameCpy,filenameIt,loc,&endVar,&vNumber)) {
+            if (!matchesView(false, filenameCpy, filenameIt, &endVar, &vNumber)) {
                 return false;
             }
 
@@ -610,8 +626,8 @@ static bool matchesPattern_v2(const std::string& filename,
             patternIt += 2;
         } else {
 
-            ///we found nothing, just compare the characters without case sensitivity
-            if (std::tolower(pattern.at(patternIt),loc) != std::tolower(filenameCpy.at(filenameIt),loc)) {
+            ///we found nothing, just compare the characters
+            if (pattern[patternIt] != filenameCpy[filenameIt]) {
                 return false;
             }
             ++patternIt;
@@ -714,8 +730,8 @@ FileNameContentPrivate::parse(const std::string& absoluteFileName)
     std::string lastNumberStr;
     std::string lastTextPart;
     for (size_t i = 0; i < filename.size(); ++i) {
-        const char& c = filename.at(i);
-        if (std::isdigit(c,std::locale())) {
+        const char& c = filename[i];
+        if (std::isdigit(c)) {
             lastNumberStr += c;
             if (!lastTextPart.empty()) {
                 orderedElements.push_back(FileNameElement(lastTextPart,FileNameElement::TEXT));
@@ -891,28 +907,28 @@ bool FileNameContent::matchesPattern(const FileNameContent& other, int* numberIn
                 if (_imp->orderedElements[i].data.size() != otherElements[i].data.size()) {
 
                     if (_imp->orderedElements[i].data.size() > otherElements[i].data.size()) {
-                        if (otherElements[i].data.at(0) == '0' && otherElements[i].data.size() > 1) {
+                        if (otherElements[i].data[0] == '0' && otherElements[i].data.size() > 1) {
                             valid = false;
                         } else {
                             size_t diff = std::abs((int)_imp->orderedElements[i].data.size() - (int)otherElements[i].data.size());
                             for (size_t k = 0;
                                  k < _imp->orderedElements[i].data.size() && k < diff;
                                  ++k) {
-                                if (_imp->orderedElements[i].data.at(k) == '0') {
+                                if (_imp->orderedElements[i].data[k] == '0') {
                                     valid = false;
                                 }
                                 break;
                             }
                         }
                     } else {
-                        if (_imp->orderedElements[i].data.at(0) == '0' && _imp->orderedElements[i].data.size() > 1) {
+                        if (_imp->orderedElements[i].data[0] == '0' && _imp->orderedElements[i].data.size() > 1) {
                             valid = false;
                         } else {
                             size_t diff = std::abs((int)_imp->orderedElements[i].data.size() - (int)otherElements[i].data.size());
                             for (size_t k = 0;
                                  k < otherElements[i].data.size() && k < diff;
                                  ++k) {
-                                if (otherElements[i].data.at(k) == '0') {
+                                if (otherElements[i].data[k] == '0') {
                                     valid = false;
                                 }
                                 break;
@@ -975,17 +991,17 @@ void FileNameContent::generatePatternWithFrameNumberAtIndex(int index, std::stri
     std::string indexedPattern = getFilePattern();
     for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
         if (_imp->orderedElements[i].type == FileNameElement::FRAME_NUMBER) {
-            lastNumberPos = findStr(indexedPattern, "#", lastNumberPos,true);
+            lastNumberPos = findStr(indexedPattern, "#", lastNumberPos);
             assert(lastNumberPos != std::string::npos);
 
             size_t endTagPos = lastNumberPos;
-            while (endTagPos < indexedPattern.size() && indexedPattern.at(endTagPos) == '#') {
+            while (endTagPos < indexedPattern.size() && indexedPattern[endTagPos] == '#') {
                 ++endTagPos;
             }
 
             ///assert that the end of the tag is composed of  a digit
             if (endTagPos < indexedPattern.size()) {
-                assert(std::isdigit(indexedPattern.at(endTagPos),std::locale()));
+                assert(std::isdigit(indexedPattern[endTagPos]));
             }
 
             if (index == numbersCount) {
@@ -1022,7 +1038,7 @@ std::string removePath(std::string& filename)
         return "";
     }
     std::string path = filename.substr(0,pos+1); // + 1 to include the trailing separator
-    removeAllOccurences(filename, path,true);
+    removeAllOccurences(filename, path);
     return path;
 }
 
@@ -1058,9 +1074,9 @@ static bool filesListFromPattern_internal(const std::string& pattern, SequencePa
     for (size_t i = 0; i < files.size(); ++i) {
         int frameNumber;
         int viewNumber;
-        if (matchesPattern_v2(files.at(i),patternUnPathed,patternExtension,loc,&frameNumber,&viewNumber)) {
+        if (matchesPattern_v2(files[i], patternUnPathed, patternExtension, &frameNumber, &viewNumber)) {
             SequenceFromPattern::iterator it = sequence->find(frameNumber);
-            std::string absoluteFileName = patternPath + files.at(i);
+            std::string absoluteFileName = patternPath + files[i];
             if (it != sequence->end()) {
                 std::pair<std::map<int,std::string>::iterator,bool> ret =
                         it->second.insert(std::make_pair(viewNumber,absoluteFileName));
