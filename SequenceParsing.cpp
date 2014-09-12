@@ -726,12 +726,12 @@ FileNameContentPrivate::parse(const std::string& absoluteFileName)
     this->absoluteFileName = absoluteFileName;
     filename = absoluteFileName;
     filePath = removePath(filename);
-
+    std::locale loc;
     std::string lastNumberStr;
     std::string lastTextPart;
     for (size_t i = 0; i < filename.size(); ++i) {
         const char& c = filename[i];
-        if (std::isdigit(c)) {
+        if (std::isdigit(c,loc)) {
             lastNumberStr += c;
             if (!lastTextPart.empty()) {
                 orderedElements.push_back(FileNameElement(lastTextPart,FileNameElement::TEXT));
@@ -1068,8 +1068,6 @@ static bool filesListFromPattern_internal(const std::string& pattern, SequencePa
     StringList files;
     getFilesFromDir(patternDir, &files);
     tinydir_close(&patternDir);
-
-    std::locale loc;
 
     for (size_t i = 0; i < files.size(); ++i) {
         int frameNumber;
