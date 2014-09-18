@@ -454,6 +454,7 @@ static bool matchesPattern_v2(const std::string& filename,
     bool wasViewNumberSet = false;
 
     ///Default view number and frame number
+    assert(viewNumber && frameNumber);
     *viewNumber = 0;
     *frameNumber = -1;
 
@@ -527,8 +528,8 @@ static bool matchesPattern_v2(const std::string& filename,
 
             ///There cannot be another variable!
             assert(!foundPrintFLikeSyntax && !foundLongView && !foundShortView);
-            size_t endHashTag;
-            int fNumber;
+            size_t endHashTag = 0;
+            int fNumber = -1;
 
             ///check if the filename matches the number of hashes
             if (!matchesHashTag(sharpCount, filenameCpy, filenameIt, &endHashTag, &fNumber)) {
@@ -553,8 +554,8 @@ static bool matchesPattern_v2(const std::string& filename,
             ///There cannot be another variable!
             assert(sharpCount == 0 && !foundLongView && !foundShortView);
 
-            size_t endPrintfLike;
-            int fNumber;
+            size_t endPrintfLike = 0;
+            int fNumber = -1;
             ///check if the filename matches the %d syntax
             if (!matchesPrintfLikeSyntax(printfDigitCount, filenameCpy, filenameIt, &endPrintfLike, &fNumber)) {
                 return false;
