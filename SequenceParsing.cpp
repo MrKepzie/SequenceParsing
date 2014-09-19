@@ -43,7 +43,9 @@
 #include <climits>
 #include <cctype> // isdigit(c)
 #include <cstddef>
+#ifdef DEBUG
 #include <iostream>
+#endif
 #include <stdexcept>
 #include <sstream>
 #include <fstream>
@@ -1080,8 +1082,10 @@ static bool filesListFromPattern_internal(const std::string& pattern, SequencePa
                 std::pair<std::map<int,std::string>::iterator,bool> ret =
                         it->second.insert(std::make_pair(viewNumber,absoluteFileName));
                 if (!ret.second) {
+#                 ifdef DEBUG
                     std::cerr << "There was an issue populating the file sequence. Several files with the same frame number"
                                  " have the same view index." << std::endl;
+#                 endif
                 }
             } else {
                 std::map<int, std::string> viewsMap;
