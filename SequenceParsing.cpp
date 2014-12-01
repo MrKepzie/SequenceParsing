@@ -909,15 +909,17 @@ bool FileNameContent::matchesPattern(const FileNameContent& other, int* numberIn
                 ///if they have different sizes, if one of them starts with a 0 its over.
                 if (_imp->orderedElements[i].data.size() != otherElements[i].data.size()) {
                     if (_imp->orderedElements[i].data.size() > otherElements[i].data.size()) {
-                        if (otherElements[i].data[0] == '0' && otherElements[i].data.size() > 1) {
+                        if (_imp->orderedElements[i].data[0] == '0' && _imp->orderedElements[i].data.size() > 1) {
                             valid = false;
                         }
+                        
                     } else {
-                        if (_imp->orderedElements[i].data[0] == '0' && _imp->orderedElements[i].data.size() > 1) {
+                        if (otherElements[i].data[0] == '0' && otherElements[i].data.size() > 1) {
                             valid = false;
                         }
                     }
                 }
+
  
                 if (valid) {
                     *numberIndexToVary = numbersCount;
