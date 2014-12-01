@@ -902,47 +902,26 @@ bool FileNameContent::matchesPattern(const FileNameContent& other, int* numberIn
             if (_imp->orderedElements[i].data != otherElements[i].data) {
                 ///if one frame number string is longer than the other, make sure it is because the represented number
                 ///is bigger and not because there's extra padding
-                /// For example 10000 couldve been produced with ## only and is valid, and 01 would also produce be ##.
+                /// For example 10000 couldve been produced with ## only and is valid, and 01 would also be produced by ##.
                 /// On the other hand 010000 could never have been produced with ## hence it is not valid.
 
                 bool valid = true;
                 ///if they have different sizes, if one of them starts with a 0 its over.
                 if (_imp->orderedElements[i].data.size() != otherElements[i].data.size()) {
-
                     if (_imp->orderedElements[i].data.size() > otherElements[i].data.size()) {
                         if (otherElements[i].data[0] == '0' && otherElements[i].data.size() > 1) {
                             valid = false;
-                        } else {
-                            size_t diff = std::abs((int)_imp->orderedElements[i].data.size() - (int)otherElements[i].data.size());
-                            for (size_t k = 0;
-                                 k < _imp->orderedElements[i].data.size() && k < diff;
-                                 ++k) {
-                                if (_imp->orderedElements[i].data[k] == '0') {
-                                    valid = false;
-                                }
-                                break;
-                            }
                         }
                     } else {
                         if (_imp->orderedElements[i].data[0] == '0' && _imp->orderedElements[i].data.size() > 1) {
                             valid = false;
-                        } else {
-                            size_t diff = std::abs((int)_imp->orderedElements[i].data.size() - (int)otherElements[i].data.size());
-                            for (size_t k = 0;
-                                 k < otherElements[i].data.size() && k < diff;
-                                 ++k) {
-                                if (otherElements[i].data[k] == '0') {
-                                    valid = false;
-                                }
-                                break;
-                            }
                         }
                     }
-
                 }
+ 
                 if (valid) {
-                   *numberIndexToVary = numbersCount;
-                   ++nbVaryingFrameNumbers;
+                    *numberIndexToVary = numbersCount;
+                    ++nbVaryingFrameNumbers;
                 }
 
             }
