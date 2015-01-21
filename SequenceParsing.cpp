@@ -369,7 +369,7 @@ namespace  {
         
         return numberMatchDigits(sharpCount, variable, frameNumber);
         
-
+        
     }
     
     static bool matchesPrintfLikeSyntax(int digitsCount,
@@ -530,7 +530,7 @@ namespace  {
                 } else if (printfIt < pattern.size() && pattern[printfIt] == 'v') {
                     foundShortView = true;
                 }
-
+                
             }
             
             
@@ -655,7 +655,7 @@ namespace  {
         return true ;
     }
     
-
+    
 }
 
 
@@ -709,7 +709,7 @@ namespace SequenceParsing {
     
     FileNameContent::FileNameContent(const std::string& absoluteFilename)
     : _imp(new FileNameContentPrivate())
-
+    
     {
         _imp->parse(absoluteFilename);
     }
@@ -745,7 +745,7 @@ namespace SequenceParsing {
                 ++ret;
             } else {
                 break;
-
+                
             }
             ++i;
         }
@@ -867,7 +867,7 @@ namespace SequenceParsing {
                     default:
                         break;
                 }
-
+                
             }
         }
         return _imp->generatedPattern;
@@ -926,7 +926,6 @@ namespace SequenceParsing {
         ///We only consider the last potential frame number
         ///
         *numberIndexToVary = -1;
-        int nbVaryingFrameNumbers = 0;
         
         int numbersCount = 0;
         for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
@@ -943,11 +942,17 @@ namespace SequenceParsing {
                  */
                 int hashesCount = (int)_imp->orderedElements[i].data.size();
                 int number;
-                bool isOK = numberMatchDigits(hashesCount, otherElements[i].data, &number);
+                bool isOK = false;
+                if (_imp->orderedElements[i].data.size() > 0 && _imp->orderedElements[i].data[0] != '0' &&
+                    otherElements[i].data.size() > 0 && otherElements[i].data[0] != '0') {
+                    isOK = true;
+                } else {
+                    isOK = numberMatchDigits(hashesCount, otherElements[i].data, &number);
+                }
+                
                 
                 if (isOK) {
                     *numberIndexToVary = numbersCount;
-                    ++nbVaryingFrameNumbers;
                 }
                 
                 ++numbersCount;
@@ -957,7 +962,7 @@ namespace SequenceParsing {
         }
         ///strings are identical
         /// we only accept files with 1 varying number
-        if (*numberIndexToVary == -1 || nbVaryingFrameNumbers != 1) {
+        if (*numberIndexToVary == -1) {
             return false;
         }
         
@@ -1007,7 +1012,7 @@ namespace SequenceParsing {
                 }
                 
                 ///assert that the end of the tag is composed of  a digit
-
+                
                 if (endTagPos < indexedPattern.size()) {
                     assert(std::isdigit(indexedPattern[endTagPos]));
                 }
@@ -1046,7 +1051,7 @@ namespace SequenceParsing {
         std::string path = filename.substr(0,pos+1); // + 1 to include the trailing separator
         removeAllOccurences(filename, path);
         return path;
-
+        
     }
     
     
@@ -1193,7 +1198,7 @@ namespace SequenceParsing {
                 output.replace(lastVariablePos, variable.size(), frameNoStr);
             } else if (variable == "%d") {
                 output.replace(lastVariablePos, variable.size(), stringFromInt(frameNumber));
-
+                
             } else {
                 throw std::invalid_argument("Unrecognized pattern: " + pattern);
             }
@@ -1217,7 +1222,7 @@ namespace SequenceParsing {
         int minNumHashes; //< the minimum number of hash tags # for the pattern
         
         SequenceFromFilesPrivate(bool enableSizeEstimation)
-
+        
         : filesMap()
         , frameNumberStringIndex(-1)
         , totalSize(0)
@@ -1323,7 +1328,7 @@ namespace SequenceParsing {
                         }
                     } else {
                         return false;
-
+                        
                     }
                     
                 } else {
@@ -1412,7 +1417,7 @@ namespace SequenceParsing {
     {
         if (isSingleFile()) {
             return _imp->filesMap.begin()->second.fileName();
-
+            
         }
         std::string pattern = generateValidSequencePattern();
         removePath(pattern);
@@ -1476,7 +1481,7 @@ namespace SequenceParsing {
         } else {
             return std::string();
         }
-
+        
     }
     
     std::string
