@@ -1,23 +1,23 @@
 /*
  SequenceParser is a small class that helps reading a sequence of images within a directory.
- 
+
  Copyright (C) 2013 INRIA
  Author Alexandre Gauthier-Foichat alexandre.gauthier-foichat@inria.fr
- 
+
  Redistribution and use in source and binary forms, with or without modification,
  are permitted provided that the following conditions are met:
- 
+
  Redistributions of source code must retain the above copyright notice, this
  list of conditions and the following disclaimer.
- 
+
  Redistributions in binary form must reproduce the above copyright notice, this
  list of conditions and the following disclaimer in the documentation and/or
  other materials provided with the distribution.
- 
+
  Neither the name of the {organization} nor the names of its
  contributors may be used to endorse or promote products derived from
  this software without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,12 +28,12 @@
  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- 
+
  INRIA
  Domaine de Voluceau
  Rocquencourt - B.P. 105
  78153 Le Chesnay Cedex - France
- 
+
  */
 
 #ifndef __IO__SequenceParser__
@@ -100,17 +100,20 @@ public:
          * no clue given just this filename what actually corresponds to the frame number.
          * Nb: this pattern is not an absolute path.
          **/
-    const std::string& getFilePattern() const;
+    const std::string& getFilePattern(int numHashes) const;
+
+    /**
+     * @brief Returns how many '0' are prepended to the frame number of the file
+     **/
+    int getNumPrependingZeroes() const;
 
     /**
          * @brief Expands the string returned by getFilePattern to a valid pattern.
          * In order to make it a valid pattern we remove all hash tags indexes and expand
          * the tags that do not correspond to index.
-         * If index is greater or equal to the number of hash tags in the pattern then this
-         * function return false. Otherwise it returns true.
          * The pattern will have its file path prepended so it is absolute.
          **/
-    void generatePatternWithFrameNumberAtIndex(int index,std::string* pattern) const;
+    void generatePatternWithFrameNumberAtIndex(int index,int numHashes,std::string* pattern) const;
 
     /**
          * @brief If the filename is composed of several numbers (e.g: file08_001.png),
@@ -272,7 +275,7 @@ public:
     int getLastFrame() const;
 
     ///all the frame indexes. Empty if this is not a sequence.
-    const std::map<int,std::string>& getFrameIndexes() const;
+    const std::map<int,FileNameContent>& getFrameIndexes() const;
 
     ///Returns the total cumulated size of all files in the sequence.
     ///If enableSizeEstimation is false, it will return 0.

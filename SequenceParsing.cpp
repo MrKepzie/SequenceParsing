@@ -369,6 +369,7 @@ namespace  {
         
         return numberMatchDigits(sharpCount, variable, frameNumber);
         
+
     }
     
     static bool matchesPrintfLikeSyntax(int digitsCount,
@@ -529,6 +530,7 @@ namespace  {
                 } else if (printfIt < pattern.size() && pattern[printfIt] == 'v') {
                     foundShortView = true;
                 }
+
             }
             
             
@@ -642,8 +644,6 @@ namespace  {
                 ++patternIt;
                 ++filenameIt;
             }
-            
-            
         }
         
         bool fileNameAtEnd =  filenameIt >= filenameCpy.size();
@@ -655,6 +655,7 @@ namespace  {
         return true ;
     }
     
+
 }
 
 
@@ -708,6 +709,7 @@ namespace SequenceParsing {
     
     FileNameContent::FileNameContent(const std::string& absoluteFilename)
     : _imp(new FileNameContentPrivate())
+
     {
         _imp->parse(absoluteFilename);
     }
@@ -743,6 +745,7 @@ namespace SequenceParsing {
                 ++ret;
             } else {
                 break;
+
             }
             ++i;
         }
@@ -864,6 +867,7 @@ namespace SequenceParsing {
                     default:
                         break;
                 }
+
             }
         }
         return _imp->generatedPattern;
@@ -1003,6 +1007,7 @@ namespace SequenceParsing {
                 }
                 
                 ///assert that the end of the tag is composed of  a digit
+
                 if (endTagPos < indexedPattern.size()) {
                     assert(std::isdigit(indexedPattern[endTagPos]));
                 }
@@ -1041,6 +1046,7 @@ namespace SequenceParsing {
         std::string path = filename.substr(0,pos+1); // + 1 to include the trailing separator
         removeAllOccurences(filename, path);
         return path;
+
     }
     
     
@@ -1187,6 +1193,7 @@ namespace SequenceParsing {
                 output.replace(lastVariablePos, variable.size(), frameNoStr);
             } else if (variable == "%d") {
                 output.replace(lastVariablePos, variable.size(), stringFromInt(frameNumber));
+
             } else {
                 throw std::invalid_argument("Unrecognized pattern: " + pattern);
             }
@@ -1210,6 +1217,7 @@ namespace SequenceParsing {
         int minNumHashes; //< the minimum number of hash tags # for the pattern
         
         SequenceFromFilesPrivate(bool enableSizeEstimation)
+
         : filesMap()
         , frameNumberStringIndex(-1)
         , totalSize(0)
@@ -1315,6 +1323,7 @@ namespace SequenceParsing {
                         }
                     } else {
                         return false;
+
                     }
                     
                 } else {
@@ -1403,6 +1412,7 @@ namespace SequenceParsing {
     {
         if (isSingleFile()) {
             return _imp->filesMap.begin()->second.fileName();
+
         }
         std::string pattern = generateValidSequencePattern();
         removePath(pattern);
@@ -1466,6 +1476,7 @@ namespace SequenceParsing {
         } else {
             return std::string();
         }
+
     }
     
     std::string
