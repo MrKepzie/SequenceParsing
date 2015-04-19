@@ -1170,7 +1170,7 @@ namespace SequenceParsing {
                 } else if (viewNumber == 1) {
                     viewNumberStr = "r";
                 } else {
-                    viewNumberStr = std::string("view") + stringFromInt(viewNumber);
+                    viewNumberStr = "view" + stringFromInt(viewNumber);
                 }
                 
                 output.replace(lastVariablePos,variable.size(), viewNumberStr);
@@ -1181,7 +1181,7 @@ namespace SequenceParsing {
                 } else if (viewNumber == 1) {
                     viewNumberStr = "right";
                 } else {
-                    viewNumberStr = std::string("view") + stringFromInt(viewNumber);
+                    viewNumberStr = "view" + stringFromInt(viewNumber);
                 }
                 
                 output.replace(lastVariablePos, variable.size(), viewNumberStr);
