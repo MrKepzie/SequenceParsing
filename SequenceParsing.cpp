@@ -1114,7 +1114,7 @@ namespace SequenceParsing {
     StringList sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPattern& sequence, int onlyViewIndex)
     {
         StringList ret;
-        for (SequenceParsing::SequenceFromPattern::const_iterator it = sequence.begin(); it!=sequence.end(); ++it) {
+        for (SequenceParsing::SequenceFromPattern::const_iterator it = sequence.begin(); it != sequence.end(); ++it) {
             const std::map<int,std::string>& views = it->second;
             
             for (std::map<int,std::string>::const_iterator it2 = views.begin(); it2!=views.end(); ++it2) {
@@ -1341,7 +1341,7 @@ namespace SequenceParsing {
     }
     
     bool SequenceFromFiles::contains(const std::string& absoluteFileName) const {
-        for (std::map <int, FileNameContent >::const_iterator it = _imp->filesMap.begin();it!=_imp->filesMap.end();++it) {
+        for (std::map <int, FileNameContent >::const_iterator it = _imp->filesMap.begin(); it != _imp->filesMap.end(); ++it) {
             if (it->second.absoluteFileName() == absoluteFileName) {
                 return true;
             }
@@ -1509,7 +1509,7 @@ namespace SequenceParsing {
         getFilesFromDir(dir, &allFiles);
         tinydir_close(&dir);
         
-        for (StringList::iterator it = allFiles.begin(); it!=allFiles.end(); ++it) {
+        for (StringList::iterator it = allFiles.begin(); it != allFiles.end(); ++it) {
             sequence->tryInsertFile(FileNameContent(firstFile.getPath() + *it));
         }
         return true;
