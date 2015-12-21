@@ -1393,15 +1393,10 @@ namespace SequenceParsing {
     }
     
     std::string
-    SequenceFromFiles::generateUserFriendlySequencePattern() const
+    SequenceFromFiles::generateUserFriendlySequencePatternFromValidPattern(const std::string& validPattern) const
     {
-        if (isSingleFile()) {
-            return _imp->filesMap.begin()->second.fileName();
-            
-        }
-        std::string pattern = generateValidSequencePattern();
-        removePath(pattern);
-        
+        assert(!isSingleFile());
+        std::string pattern = validPattern;
         std::vector< std::pair<int,int> > chunks;
         //int first = getFirstFrame();
         std::map<int,FileNameContent>::const_iterator first = _imp->filesMap.begin();
@@ -1451,6 +1446,20 @@ namespace SequenceParsing {
             pattern.append(" ) ");
         }
         return pattern;
+
+    }
+    
+    std::string
+    SequenceFromFiles::generateUserFriendlySequencePattern() const
+    {
+        if (isSingleFile()) {
+            return _imp->filesMap.begin()->second.fileName();
+            
+        }
+        std::string pattern = generateValidSequencePattern();
+        removePath(pattern);
+        return generateUserFriendlySequencePatternFromValidPattern(pattern);
+        
     }
     
     std::string

@@ -272,7 +272,8 @@ public:
     ////If the sequence contains only a single file, it will be the exact same name
     ////the filename without the path.
     std::string generateUserFriendlySequencePattern() const;
-
+    std::string generateUserFriendlySequencePatternFromValidPattern(const std::string& pattern) const;
+    
 private:
     std::auto_ptr<SequenceFromFilesPrivate> _imp; // PImpl
 };
