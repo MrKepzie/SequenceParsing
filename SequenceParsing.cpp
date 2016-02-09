@@ -58,13 +58,12 @@ using std::size_t;
 
 namespace  {
     
-    
-    inline std::wstring
+#ifdef __NATRON_WIN32__
+    static std::wstring
     s2ws(const std::string & s)
     {
         
         
-#ifdef __NATRON_WIN32__
         int len;
         int slength = (int)s.length() + 1;
         len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
@@ -73,31 +72,13 @@ namespace  {
         std::wstring r(buf);
         delete[] buf;
         return r;
-#else
-        std::wstring dest;
-        
-        size_t max = s.size() * 4;
-        mbtowc (NULL, NULL, max);  /* reset mbtowc */
-        
-        const char* cstr = s.c_str();
-        
-        while (max > 0) {
-            wchar_t w;
-            size_t length = mbtowc(&w,cstr,max);
-            if (length < 1) {
-                break;
-            }
-            dest.push_back(w);
-            cstr += length;
-            max -= length;
-        }
-        return dest;
-#endif
         
     } // s2ws
+#endif
+
     
-    
-    static std::size_t getFileSize(const std::string& filename)
+    static std::size_t
+    getFileSize(const std::string& filename)
     {
 #ifdef _WIN32
         std::wstring wfilename = s2sw(filename);
