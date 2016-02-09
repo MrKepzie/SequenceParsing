@@ -58,7 +58,7 @@ using std::size_t;
 
 namespace  {
     
-#ifdef __NATRON_WIN32__
+#ifdef _WIN32
     static std::wstring
     s2ws(const std::string & s)
     {
