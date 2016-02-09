@@ -34,6 +34,12 @@
 #include <algorithm>
 #include <memory>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/stat.h>
+#endif
+
 #include "tinydir/tinydir.h"
 
 
@@ -51,6 +57,97 @@
 using std::size_t;
 
 namespace  {
+    
+    
+    inline std::wstring
+    s2ws(const std::string & s)
+    {
+        
+        
+#ifdef __NATRON_WIN32__
+        int len;
+        int slength = (int)s.length() + 1;
+        len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+        wchar_t* buf = new wchar_t[len];
+        MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+        std::wstring r(buf);
+        delete[] buf;
+        return r;
+#else
+        std::wstring dest;
+        
+        size_t max = s.size() * 4;
+        mbtowc (NULL, NULL, max);  /* reset mbtowc */
+        
+        const char* cstr = s.c_str();
+        
+        while (max > 0) {
+            wchar_t w;
+            size_t length = mbtowc(&w,cstr,max);
+            if (length < 1) {
+                break;
+            }
+            dest.push_back(w);
+            cstr += length;
+            max -= length;
+        }
+        return dest;
+#endif
+        
+    } // s2ws
+    
+    
+    static std::size_t getFileSize(const std::string& filename)
+    {
+#ifdef _WIN32
+        std::wstring wfilename = s2sw(filename);
+        LARGE_INTEGER file_size = { 0 };
+        
+        /*
+         On Windows there are 3 methods to get the size of a file, the most robust being the 1st one 
+         but it is also the most expensive. 
+         By order of performance: 3), 2), 1)
+         By order of reliability: 1), 2), 3)
+         Since in our use-case here the file size is just a hint, use the fastest alternative.
+         */
+       /*
+        //Method 1, open the file
+            HANDLE file = CreateFileW(wfilename,
+                                     GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                                     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if(file && file != INVALID_HANDLE_VALUE){
+                if(!GetFileSizeEx(file, &file_size)){
+                    file_size.QuadPart = 0; // clean-up on fail
+                }
+                CloseHandle(file);
+            }
+        */
+        
+        /*
+         //Method 2, find the file
+            WIN32_FIND_DATAW find_data;
+            HANDLE find_file = FindFirstFileW(wfilename, &find_data);
+            if(find_file && find_file != INVALID_HANDLE_VALUE){
+                file_size.LowPart = find_data.nFileSizeLow;
+                file_size.HighPart = find_data.nFileSizeHigh;
+                FindClose(find_file);
+            }
+        */
+
+        //Method 3, read the file attributes, this is the fastest
+        WIN32_FILE_ATTRIBUTE_DATA file_attr_data;
+        if(GetFileAttributesExW(wfilename, GetFileExInfoStandard, &file_attr_data)){
+            file_size.LowPart = file_attr_data.nFileSizeLow;
+            file_size.HighPart = file_attr_data.nFileSizeHigh;
+        }
+        
+        
+        return (std::size_t)file_size.QuadPart;
+#else // !_WIN32
+        std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+        return in.tellg();
+#endif // _WIN32
+    }
     
 #if 0
     // case-insensitive char_traits
@@ -1264,8 +1361,7 @@ namespace SequenceParsing {
             _imp->minNumHashes = (int)frameNumberStr.size();
             
             if (_imp->sizeEstimationEnabled) {
-                std::ifstream f(file.absoluteFileName().c_str(), std::ios::binary | std::ios::ate);
-                _imp->totalSize += f.tellg();
+                _imp->totalSize += getFileSize(file.absoluteFileName());
             }
             return true;
         }
@@ -1303,8 +1399,7 @@ namespace SequenceParsing {
                     ///present or not.
                     if (success.second) {
                         if (_imp->sizeEstimationEnabled) {
-                            std::ifstream f(file.absoluteFileName().c_str(), std::ios::binary | std::ios::ate);
-                            _imp->totalSize += f.tellg();
+                            _imp->totalSize += getFileSize(file.absoluteFileName());
                         }
                     } else {
                         return false;
