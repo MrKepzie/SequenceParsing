@@ -144,7 +144,7 @@ namespace  {
         
         return (std::size_t)file_size.QuadPart;
 #else // !_WIN32
-        std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+        std::ifstream in(filename.c_str(), std::ifstream::ate | std::ifstream::binary);
         return in.tellg();
 #endif // _WIN32
     }
