@@ -93,7 +93,7 @@ namespace  {
          */
        /*
         //Method 1, open the file
-            HANDLE file = CreateFileW(wfilename,
+            HANDLE file = CreateFileW(wfilename.c_str(),
                                      GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
                                      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
             if(file && file != INVALID_HANDLE_VALUE){
@@ -107,7 +107,7 @@ namespace  {
         /*
          //Method 2, find the file
             WIN32_FIND_DATAW find_data;
-            HANDLE find_file = FindFirstFileW(wfilename, &find_data);
+            HANDLE find_file = FindFirstFileW(wfilename.c_str(), &find_data);
             if(find_file && find_file != INVALID_HANDLE_VALUE){
                 file_size.LowPart = find_data.nFileSizeLow;
                 file_size.HighPart = find_data.nFileSizeHigh;
@@ -117,7 +117,7 @@ namespace  {
 
         //Method 3, read the file attributes, this is the fastest
         WIN32_FILE_ATTRIBUTE_DATA file_attr_data;
-        if(GetFileAttributesExW(wfilename, GetFileExInfoStandard, &file_attr_data)){
+        if(GetFileAttributesExW(wfilename.c_str(), GetFileExInfoStandard, &file_attr_data)){
             file_size.LowPart = file_attr_data.nFileSizeLow;
             file_size.HighPart = file_attr_data.nFileSizeHigh;
         }
