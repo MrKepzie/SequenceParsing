@@ -81,7 +81,7 @@ namespace  {
     getFileSize(const std::string& filename)
     {
 #ifdef _WIN32
-        std::wstring wfilename = s2sw(filename);
+        std::wstring wfilename = s2ws(filename);
         LARGE_INTEGER file_size = { 0 };
         
         /*
