@@ -188,7 +188,10 @@ StringList sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPat
      * @brief Generates a filename out of a pattern
      * @see filesListFromPattern
      **/
-std::string generateFileNameFromPattern(const std::string& pattern,int frameNumber,int viewNumber);
+std::string generateFileNameFromPattern(const std::string& pattern,
+                                        const std::vector<std::string>& viewNames,
+                                        int frameNumber,
+                                        int viewNumber);
 
 /**
      * @struct Used to gather file together that seem to belong to the same sequence.

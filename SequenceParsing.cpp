@@ -1186,9 +1186,12 @@ namespace SequenceParsing {
     }
     
     std::string generateFileNameFromPattern(const std::string& pattern,
+                                            const std::vector<std::string>& viewNames,
                                             int frameNumber,
                                             int viewNumber)
     {
+        assert(viewNumber >= 0 && viewNumber < (int)viewNames.size());
+        
         std::string patternUnPathed = pattern;
         std::string patternPath = removePath(patternUnPathed);
         std::string patternExtension = removeFileExtension(patternUnPathed);
@@ -1203,7 +1206,7 @@ namespace SequenceParsing {
         ///this list represents the variables ( ###  %04d %v etc...) found in the pattern ordered from left to right in the
         ///original string.
         std::vector<std::pair<std::string,int> > variablesByOrder;
-        extractCommonPartsAndVariablesFromPattern(patternUnPathed, patternExtension, &commonPartsToFind, &variablesByOrder);
+        extractCommonPartsAndVariablesFromPattern(pattern, patternExtension, &commonPartsToFind, &variablesByOrder);
         
         std::string output = pattern;
         size_t lastVariablePos = std::string::npos;
@@ -1223,25 +1226,11 @@ namespace SequenceParsing {
                 output.replace(lastVariablePos, variable.size(), frameNoStr);
             } else if (variable.find("%v") != std::string::npos) {
                 std::string viewNumberStr;
-                if (viewNumber == 0) {
-                    viewNumberStr = "l";
-                } else if (viewNumber == 1) {
-                    viewNumberStr = "r";
-                } else {
-                    viewNumberStr = "view" + stringFromInt(viewNumber);
-                }
-                
+                viewNumberStr.push_back(std::toupper(viewNames[viewNumber][0]));
+
                 output.replace(lastVariablePos,variable.size(), viewNumberStr);
             } else if (variable.find("%V") != std::string::npos) {
-                std::string viewNumberStr;
-                if (viewNumber == 0) {
-                    viewNumberStr = "left";
-                } else if (viewNumber == 1) {
-                    viewNumberStr = "right";
-                } else {
-                    viewNumberStr = "view" + stringFromInt(viewNumber);
-                }
-                
+                const std::string& viewNumberStr = viewNames[viewNumber];
                 output.replace(lastVariablePos, variable.size(), viewNumberStr);
             } else if(startsWith(variable, "%0") && endsWith(variable,"d")) {
                 std::string digitsCountStr = variable;
