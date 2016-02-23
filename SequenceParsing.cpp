@@ -72,7 +72,7 @@ namespace  {
         
         return native;
         
-    } // s2ws
+    } // utf8_to_utf16
 #endif
 
     
@@ -80,7 +80,7 @@ namespace  {
     getFileSize(const std::string& filename)
     {
 #ifdef _WIN32
-        std::wstring wfilename = s2ws(filename);
+        std::wstring wfilename = utf8_to_utf16(filename);
         LARGE_INTEGER file_size = { 0 };
         
         /*
