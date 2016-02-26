@@ -1189,7 +1189,6 @@ namespace SequenceParsing {
                                             int frameNumber,
                                             int viewNumber)
     {
-        assert(viewNumber >= 0 && viewNumber < (int)viewNames.size());
         
         std::string patternUnPathed = pattern;
         std::string patternPath = removePath(patternUnPathed);
@@ -1225,12 +1224,17 @@ namespace SequenceParsing {
                 output.replace(lastVariablePos, variable.size(), frameNoStr);
             } else if (variable.find("%v") != std::string::npos) {
                 std::string viewNumberStr;
-                viewNumberStr.push_back(std::toupper(viewNames[viewNumber][0]));
+                if (viewNumber >= 0 && viewNumber < (int)viewNames.size()) {
+                    viewNumberStr.push_back(std::toupper(viewNames[viewNumber][0]));
+                }
+                
 
                 output.replace(lastVariablePos,variable.size(), viewNumberStr);
             } else if (variable.find("%V") != std::string::npos) {
-                const std::string& viewNumberStr = viewNames[viewNumber];
-                output.replace(lastVariablePos, variable.size(), viewNumberStr);
+                if (viewNumber >= 0 && viewNumber < (int)viewNames.size()) {
+                    const std::string& viewNumberStr = viewNames[viewNumber];
+                    output.replace(lastVariablePos, variable.size(), viewNumberStr);
+                }
             } else if(startsWith(variable, "%0") && endsWith(variable,"d")) {
                 std::string digitsCountStr = variable;
                 removeAllOccurences(digitsCountStr,"%0");
