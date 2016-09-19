@@ -171,9 +171,17 @@ typedef std::map<int,std::map<int,std::string> > SequenceFromPattern;
      *
      * @returns True if it could extract a valid sequence from the pattern (even with 1 filename in it). False if the pattern
      * is not valid.
+     *
+     * WARNING: This function may be VERY slow on Windows when operating on a folder over the network because the underlying library (tinydir)
+     * doesn't make the appropriate function calls. Instead use filesListFromPattern_fast if possible.
      **/
-bool filesListFromPattern(const std::string& pattern,SequenceParsing::SequenceFromPattern* sequence);
+    bool filesListFromPattern_slow(const std::string& pattern, SequenceParsing::SequenceFromPattern* sequence);
 
+    /**
+    * @brief Same as filesListFromPattern_slow except that it takes the pattern (without path) and a list of filenames in the same directory.
+    * This avoids the tinydir bottleneck when reading from files over the network.
+    **/
+    bool filesListFromPattern_fast(const std::string& pattern, const StringList& files, SequenceParsing::SequenceFromPattern* sequence);
 
 /**
      * @brief Transforms a sequence parsed from a pattern to a absolute file names list. If
@@ -216,15 +224,6 @@ public:
     SequenceFromFiles(const SequenceFromFiles& other);
 
     ~SequenceFromFiles();
-
-    /**
-         * @brief Given the absoluteFileName, this function returns the sequence of all the files that
-         * seem to match the pattern of that file.
-         * @param sequence[out] Contains at least 1 file once this function has returned.
-         * @brief Returns true on success, false otherwise. This function returns false if you have provided
-         * a wrong filename for example.
-         **/
-    static bool getSequenceOutOfFile(const std::string& absoluteFileName,SequenceFromFiles* sequence);
 
     void operator=(const SequenceFromFiles& other) const;
 

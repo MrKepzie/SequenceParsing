@@ -1111,33 +1111,15 @@ namespace SequenceParsing {
         
     }
     
-    
-    static bool filesListFromPattern_internal(const std::string& pattern, SequenceParsing::SequenceFromPattern* sequence)
+    bool filesListFromPattern_fast(const std::string& pattern, const StringList &files, SequenceParsing::SequenceFromPattern* sequence)
     {
         if (pattern.empty()) {
             return false;
         }
-        
         std::string patternUnPathed = pattern;
         std::string patternPath = removePath(patternUnPathed);
         std::string patternExtension = removeFileExtension(patternUnPathed);
-        
-        //    ///the pattern has no extension, switch the extension and the unpathed part
-        //    if (patternUnPathed.empty()) {
-        //        patternUnPathed = patternExtension;
-        //        patternExtension.clear();
-        //    }
-        
-        tinydir_dir patternDir;
-        if (tinydir_open(&patternDir, patternPath.c_str()) == -1) {
-            return false;
-        }
-        
-        ///all the interesting files of the pattern directory
-        StringList files;
-        getFilesFromDir(patternDir, &files);
-        tinydir_close(&patternDir);
-        
+
         for (size_t i = 0; i < files.size(); ++i) {
             int frameNumber;
             int viewNumber;
@@ -1146,11 +1128,11 @@ namespace SequenceParsing {
                 std::string absoluteFileName = patternPath + files[i];
                 if (it != sequence->end()) {
                     std::pair<std::map<int,std::string>::iterator,bool> ret =
-                    it->second.insert(std::make_pair(viewNumber,absoluteFileName));
+                            it->second.insert(std::make_pair(viewNumber,absoluteFileName));
                     if (!ret.second) {
 #                 ifdef DEBUG
                         std::cerr << "There was an issue populating the file sequence. Several files with the same frame number"
-                        " have the same view index." << std::endl;
+                                     " have the same view index." << std::endl;
 #                 endif
                     }
                 } else {
@@ -1162,12 +1144,30 @@ namespace SequenceParsing {
         }
         return true;
     }
-    
-    bool filesListFromPattern(const std::string& pattern, SequenceParsing::SequenceFromPattern* sequence)
+
+    bool filesListFromPattern_slow(const std::string& pattern, SequenceParsing::SequenceFromPattern* sequence)
     {
-        return filesListFromPattern_internal(pattern,sequence);
+        if (pattern.empty()) {
+            return false;
+        }
+
+        std::string patternUnPathed = pattern;
+        std::string patternPath = removePath(patternUnPathed);
+
+        tinydir_dir patternDir;
+        if (tinydir_open(&patternDir, patternPath.c_str()) == -1) {
+            return false;
+        }
+
+        ///all the interesting files of the pattern directory
+        StringList files;
+        getFilesFromDir(patternDir, &files);
+        tinydir_close(&patternDir);
+
+        return filesListFromPattern_fast(pattern, files, sequence);
+
     }
-    
+
     StringList sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPattern& sequence, int onlyViewIndex)
     {
         StringList ret;
@@ -1273,11 +1273,11 @@ namespace SequenceParsing {
         
         SequenceFromFilesPrivate(bool enableSizeEstimation)
         
-        : filesMap()
-        , frameNumberStringIndex(-1)
-        , totalSize(0)
-        , sizeEstimationEnabled(enableSizeEstimation)
-        , minNumHashes(0)
+            : filesMap()
+            , frameNumberStringIndex(-1)
+            , totalSize(0)
+            , sizeEstimationEnabled(enableSizeEstimation)
+            , minNumHashes(0)
         {
             
         }
@@ -1288,13 +1288,13 @@ namespace SequenceParsing {
     };
     
     SequenceFromFiles::SequenceFromFiles(bool enableSizeEstimation)
-    : _imp(new SequenceFromFilesPrivate(enableSizeEstimation))
+        : _imp(new SequenceFromFilesPrivate(enableSizeEstimation))
     {
         
     }
     
     SequenceFromFiles::SequenceFromFiles(const FileNameContent& firstFile,  bool enableSizeEstimation)
-    : _imp(new SequenceFromFilesPrivate(enableSizeEstimation))
+        : _imp(new SequenceFromFilesPrivate(enableSizeEstimation))
     {
         tryInsertFile(firstFile);
     }
@@ -1304,7 +1304,7 @@ namespace SequenceParsing {
     }
     
     SequenceFromFiles::SequenceFromFiles(const SequenceFromFiles& other)
-    : _imp(new SequenceFromFilesPrivate(false))
+        : _imp(new SequenceFromFilesPrivate(false))
     {
         *this = other;
     }
@@ -1366,7 +1366,7 @@ namespace SequenceParsing {
                     
                     
                     std::pair<std::map<int,FileNameContent>::iterator,bool> success =
-                    _imp->filesMap.insert(std::make_pair(stringToInt(frameNumberStr),file));
+                            _imp->filesMap.insert(std::make_pair(stringToInt(frameNumberStr),file));
                     
                     ///Insert might have failed because we didn't check prior to this whether the file was already
                     ///present or not.
@@ -1550,27 +1550,6 @@ namespace SequenceParsing {
             return std::string();
         }
     }
-    
-    bool
-    SequenceFromFiles::getSequenceOutOfFile(const std::string& absoluteFileName,SequenceFromFiles* sequence)
-    {
-        FileNameContent firstFile(absoluteFileName);
-        sequence->tryInsertFile(firstFile);
-        
-        tinydir_dir dir;
-        if (tinydir_open(&dir, firstFile.getPath().c_str()) == -1) {
-            return false;
-        }
-        
-        StringList allFiles;
-        getFilesFromDir(dir, &allFiles);
-        tinydir_close(&dir);
-        
-        for (StringList::iterator it = allFiles.begin(); it != allFiles.end(); ++it) {
-            sequence->tryInsertFile(FileNameContent(firstFile.getPath() + *it));
-        }
-        return true;
-    }
-    
+
 } // namespace SequenceParsing
 
