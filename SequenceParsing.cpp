@@ -895,6 +895,52 @@ namespace SequenceParsing {
     {
         return _imp->extension;
     }
+
+    bool
+    FileNameContent::isVideo() const
+    {
+        std::string ext = _imp->extension;
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+        if ( (ext == "3g2") ||
+            (ext == "3gp") ||
+            (ext == "avc") ||
+            (ext == "avi") ||
+            (ext == "dirac") ||
+            (ext == "dv") ||
+            (ext == "flv") ||
+            (ext == "h261") ||
+            (ext == "h263") ||
+            (ext == "h264") ||
+            (ext == "h265") ||
+            (ext == "h26l") ||
+            (ext == "hevc") ||
+            (ext == "m2ts") ||
+            (ext == "m4v") ||
+            (ext == "matroska") ||
+            (ext == "mj2") ||
+            (ext == "mjpeg") ||
+            (ext == "mjpg") ||
+            (ext == "mkv") ||
+            (ext == "mov") ||
+            (ext == "mp4") ||
+            (ext == "mpeg") ||
+            (ext == "mpg") ||
+            (ext == "mpjpeg") ||
+            (ext == "msf") ||
+            (ext == "mt2") ||
+            (ext == "mts") ||
+            (ext == "mxf") ||
+            (ext == "rawvideo") ||
+            (ext == "swf") ||
+            (ext == "vc1") ||
+            (ext == "webm") ||
+            (ext == "ts") ||
+            (ext == "ogv") ) {
+            return true;
+        }
+        return false;
+    }
     
     
     /**
