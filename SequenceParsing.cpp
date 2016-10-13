@@ -60,18 +60,14 @@ namespace  {
     
 #ifdef _WIN32
     static std::wstring
-    utf8_to_utf16(const std::string & s)
+    utf8_to_utf16(const std::string & str)
     {
-        
-        
         std::wstring native;
-        
         
         native.resize(MultiByteToWideChar (CP_UTF8, 0, str.data(), str.length(), NULL, 0) -1);
         MultiByteToWideChar (CP_UTF8, 0, str.data(), str.length(), &native[0], (int)native.size());
         
         return native;
-        
     } // utf8_to_utf16
 #endif
 
@@ -120,7 +116,6 @@ namespace  {
             file_size.LowPart = file_attr_data.nFileSizeLow;
             file_size.HighPart = file_attr_data.nFileSizeHigh;
         }
-        
         
         return (std::size_t)file_size.QuadPart;
 #else // !_WIN32
