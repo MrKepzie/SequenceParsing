@@ -64,7 +64,7 @@ namespace  {
     {
         std::wstring native;
         
-        native.resize(MultiByteToWideChar (CP_UTF8, 0, str.data(), str.length(), NULL, 0) -1);
+        native.resize(MultiByteToWideChar (CP_UTF8, 0, str.data(), str.length(), NULL, 0));
         MultiByteToWideChar (CP_UTF8, 0, str.data(), str.length(), &native[0], (int)native.size());
         
         return native;
