@@ -341,23 +341,15 @@ namespace  {
         ///iterate through all the files in the directory
         while (dir.has_next) {
             tinydir_file file;
-            tinydir_readfile(&dir, &file);
-            
-            if (file.is_dir) {
-                tinydir_next(&dir);
-                continue;
+            int status = tinydir_readfile(&dir, &file);
+            if (status == 0 && !file.is_dir) {
+                std::string filename(file.name);
+                if (filename != "." && filename != "..") {
+                    ret->push_back(filename);
+                }
             }
-            
-            std::string filename(file.name);
-            if (filename == "." || filename == "..") {
-                tinydir_next(&dir);
-                continue;
-            } else {
-                ret->push_back(filename);
-            }
-            
+
             tinydir_next(&dir);
-            
         }
     }
     
