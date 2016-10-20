@@ -70,6 +70,8 @@ public:
     const std::string& getExtension() const;
 
 
+    bool isVideo() const;
+
     /**
          * @brief Returns the file pattern found in the filename with hash characters style for frame number (i.e: ###)
          * A few things about this pattern:
