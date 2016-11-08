@@ -775,11 +775,11 @@ struct FileNameContentPrivate
     ///Ordered from left to right, these are the elements composing the filename without its path
     std::vector<FileNameElement> orderedElements;
     std::string absoluteFileName;
-    std::string filePath;     //< the filepath
-    std::string filename;     //< the filename without path
-    std::string extension;     //< the file extension
+    std::string filePath;     //!< the filepath
+    std::string filename;     //!< the filename without path
+    std::string extension;     //!< the file extension
     std::string generatedPattern;
-    int leadingZeroes;
+    int leadingZeroes; //!< leading zeroes for the last number seen in the file path??? why store this?
 
     FileNameContentPrivate()
         : orderedElements()
