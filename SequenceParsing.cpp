@@ -388,7 +388,7 @@ getFilesFromDir(tinydir_dir& dir,
 /*
    The following rules applying for matching frame numbers:
    - If the number has at least as many digits as the digitsCount then it is OK
-   - If the number has more digits than the digitsCOunt, it is only OK if it has 0 prepending zeroes
+   - If the number has more digits than the digitsCOunt, it is only OK if it has 0 leading zeroes
  */
 static bool
 numberMatchDigits(int digitsCount,
@@ -407,23 +407,23 @@ numberMatchDigits(int digitsCount,
 
     assert( (int)number.size() > digitsCount );
 
-    int nbPrependingZeroes = 0;
+    int nbLeadingZeroes = 0;
 
     std::string noStrWithoutZeroes;
     for (std::size_t i = 0; i < number.size(); ++i) {
         if (number[i] != '0') {
             break;
         }
-        ++nbPrependingZeroes;
+        ++nbLeadingZeroes;
     }
-    if ( nbPrependingZeroes == (int)number.size() ) {
-        --nbPrependingZeroes;
+    if ( nbLeadingZeroes == (int)number.size() ) {
+        --nbLeadingZeroes;
     }
 
-    assert(nbPrependingZeroes >= 0);
+    assert(nbLeadingZeroes >= 0);
 
 
-    if (nbPrependingZeroes > 0) {
+    if (nbLeadingZeroes > 0) {
         return false;
     }
 
@@ -728,6 +728,24 @@ matchesPattern_v2(const std::string& filename,
 
     return true;
 } // matchesPattern_v2
+
+static int countLeadingZeroes(const std::string& str)
+{
+    int ret = 0;
+
+    std::size_t i = 0;
+    while ( i < str.size() ) {
+        if (str[i] == '0') {
+            ++ret;
+        } else {
+            break;
+        }
+        ++i;
+    }
+
+    return ret;
+}
+
 } // namespace {
 
 
@@ -761,7 +779,7 @@ struct FileNameContentPrivate
     std::string filename;     //< the filename without path
     std::string extension;     //< the file extension
     std::string generatedPattern;
-    int prependingZeroes;
+    int leadingZeroes;
 
     FileNameContentPrivate()
         : orderedElements()
@@ -770,13 +788,11 @@ struct FileNameContentPrivate
         , filename()
         , extension()
         , generatedPattern()
-        , prependingZeroes(0)
+        , leadingZeroes(0)
     {
     }
 
     void parse(const std::string& absoluteFileName);
-
-    static int getPrependingZeroes(const std::string& str);
 };
 
 
@@ -784,7 +800,48 @@ FileNameContent::FileNameContent(const std::string& absoluteFilename)
     : _imp( new FileNameContentPrivate() )
 
 {
-    _imp->parse(absoluteFilename);
+    _imp->absoluteFileName = absoluteFileName;
+    _imp->filename = absoluteFileName;
+    _imp->filePath = removePath(_imp->filename);
+    std::locale loc;
+    std::string lastNumberStr;
+    std::string lastTextPart;
+    for (size_t i = 0; i < _imp->filename.size(); ++i) {
+        const char& c = _imp->filename[i];
+        if ( std::isdigit(c, loc) ) {
+            lastNumberStr += c;
+            if ( !lastTextPart.empty() ) {
+                _imp->orderedElements.push_back( FileNameElement(lastTextPart, FileNameElement::TEXT) );
+                lastTextPart.clear();
+            }
+        } else {
+            if ( !lastNumberStr.empty() ) {
+                _imp->orderedElements.push_back( FileNameElement(lastNumberStr, FileNameElement::FRAME_NUMBER) );
+                _imp->leadingZeroes = countLeadingZeroes(lastNumberStr);     //< take into account only the last FRAME_NUMBER
+                lastNumberStr.clear();
+            }
+
+            lastTextPart.push_back(c);
+        }
+    }
+
+    if ( !lastNumberStr.empty() ) {
+        _imp->orderedElements.push_back( FileNameElement(lastNumberStr, FileNameElement::FRAME_NUMBER) );
+        _imp->leadingZeroes = getLeadingZeroes(lastNumberStr);     //< take into account only the last FRAME_NUMBER
+        lastNumberStr.clear();
+    }
+    if ( !lastTextPart.empty() ) {
+        _imp->orderedElements.push_back( FileNameElement(lastTextPart, FileNameElement::TEXT) );
+        lastTextPart.clear();
+    }
+
+    // extension is everything after the last '.'
+    size_t lastDotPos = filename.find_last_of('.');
+    if (lastDotPos == std::string::npos) {
+        _imp->extension.clear();
+    } else {
+        _imp->extension = filename.substr(lastDotPos + 1);
+    }
 }
 
 FileNameContent::FileNameContent(const FileNameContent& other)
@@ -809,74 +866,9 @@ FileNameContent::operator=(const FileNameContent& other)
 }
 
 int
-FileNameContentPrivate::getPrependingZeroes(const std::string& str)
+FileNameContent::getLeadingZeroes() const
 {
-    int ret = 0;
-
-    std::size_t i = 0;
-    while ( i < str.size() ) {
-        if (str[i] == '0') {
-            ++ret;
-        } else {
-            break;
-        }
-        ++i;
-    }
-
-    return ret;
-}
-
-void
-FileNameContentPrivate::parse(const std::string& absoluteFileName)
-{
-    this->absoluteFileName = absoluteFileName;
-    filename = absoluteFileName;
-    filePath = removePath(filename);
-    std::locale loc;
-    std::string lastNumberStr;
-    std::string lastTextPart;
-    for (size_t i = 0; i < filename.size(); ++i) {
-        const char& c = filename[i];
-        if ( std::isdigit(c, loc) ) {
-            lastNumberStr += c;
-            if ( !lastTextPart.empty() ) {
-                orderedElements.push_back( FileNameElement(lastTextPart, FileNameElement::TEXT) );
-                lastTextPart.clear();
-            }
-        } else {
-            if ( !lastNumberStr.empty() ) {
-                orderedElements.push_back( FileNameElement(lastNumberStr, FileNameElement::FRAME_NUMBER) );
-                prependingZeroes = getPrependingZeroes(lastNumberStr);     //< take into account only the last FRAME_NUMBER
-                lastNumberStr.clear();
-            }
-
-            lastTextPart.push_back(c);
-        }
-    }
-
-    if ( !lastNumberStr.empty() ) {
-        orderedElements.push_back( FileNameElement(lastNumberStr, FileNameElement::FRAME_NUMBER) );
-        prependingZeroes = getPrependingZeroes(lastNumberStr);     //< take into account only the last FRAME_NUMBER
-        lastNumberStr.clear();
-    }
-    if ( !lastTextPart.empty() ) {
-        orderedElements.push_back( FileNameElement(lastTextPart, FileNameElement::TEXT) );
-        lastTextPart.clear();
-    }
-
-    // extension is everything after the last '.'
-    size_t lastDotPos = filename.find_last_of('.');
-    if (lastDotPos == std::string::npos) {
-        extension.clear();
-    } else {
-        extension = filename.substr(lastDotPos + 1);
-    }
-}
-
-int
-FileNameContent::getNumPrependingZeroes() const
-{
-    return _imp->prependingZeroes;
+    return _imp->leadingZeroes;
 }
 
 /**

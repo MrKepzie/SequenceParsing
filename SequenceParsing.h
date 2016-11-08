@@ -83,7 +83,7 @@ public:
     /**
      * @brief Returns how many '0' are prepended to the frame number of the file
      **/
-    int getNumPrependingZeroes() const;
+    int getLeadingZeroes() const;
 
     /**
      * @brief Expands the string returned by getFilePattern to a valid pattern.
@@ -145,7 +145,7 @@ typedef std::map<int, std::map<int, std::string> > SequenceFromPattern;
  * The rules of the pattern are:
  *
  * 1) Hashes character ('#') are counted as one digit. One digit account for extra
- * 0 padding that may exist prepending the actual number. Therefore
+ * 0 padding that may exist leading the actual number. Therefore
  * /Users/Lala/Pictures/mySequence###.jpg will accept the following filenames:
  * /Users/Lala/Pictures/mySequence001.jpg
  * /Users/Lala/Pictures/mySequence100.jpg
