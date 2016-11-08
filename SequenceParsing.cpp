@@ -395,6 +395,8 @@ numberMatchDigits(int digitsCount,
                   const std::string& number,
                   int *frameNumber)
 {
+    assert(digitsCount > 0);
+
     *frameNumber = stringToInt(number);
 
     if ( (int)number.size() == digitsCount ) {
@@ -407,23 +409,7 @@ numberMatchDigits(int digitsCount,
 
     assert( (int)number.size() > digitsCount );
 
-    int nbLeadingZeroes = 0;
-
-    std::string noStrWithoutZeroes;
-    for (std::size_t i = 0; i < number.size(); ++i) {
-        if (number[i] != '0') {
-            break;
-        }
-        ++nbLeadingZeroes;
-    }
-    if ( nbLeadingZeroes == (int)number.size() ) {
-        --nbLeadingZeroes;
-    }
-
-    assert(nbLeadingZeroes >= 0);
-
-
-    if (nbLeadingZeroes > 0) {
+    if (number[0] == '0') {
         return false;
     }
 
@@ -1013,16 +999,27 @@ FileNameContent::matchesPattern(const FileNameContent& other,
             int hashesCount = (int)_imp->orderedElements[i].data.size();
             int number;
             bool isOK = false;
-            if ( ( _imp->orderedElements[i].data.size() > 0) && ( _imp->orderedElements[i].data[0] != '0') &&
-                 ( otherElements[i].data.size() > 0) && ( otherElements[i].data[0] != '0') ) {
-                isOK = true;
-            } else {
-                isOK = numberMatchDigits(hashesCount, otherElements[i].data, &number);
+            // first, the number string must be different
+            if ( _imp->orderedElements[i].data != otherElements[i].data ) {
+                // if the number strings do not start with 0 then it may be a match
+                if ( ( _imp->orderedElements[i].data.size() > 0) && ( _imp->orderedElements[i].data[0] != '0') &&
+                    ( otherElements[i].data.size() > 0) && ( otherElements[i].data[0] != '0') ) {
+                    isOK = true;
+                } else {
+                    isOK = numberMatchDigits(hashesCount, otherElements[i].data, &number);
+                }
             }
 
-
             if (isOK) {
-                *numberIndexToVary = numbersCount;
+                if (*numberIndexToVary == -1) {
+                    *numberIndexToVary = numbersCount;
+                } else {
+                    // cannot have more than one varying number, eg:
+                    // Digital_LAD_2048x1556.cin
+                    // Digital_LAD_4096x3112.cin
+                    *numberIndexToVary = -1;
+                    return false;
+                }
             }
 
             ++numbersCount;
