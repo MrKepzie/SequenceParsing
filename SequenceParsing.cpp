@@ -60,7 +60,7 @@ namespace  {
 
 #ifdef _WIN32
 static std::wstring
-utf8_to_utf16(const std::string & str)
+utf8_to_utf16(const std::string& str)
 {
     std::wstring native;
 
@@ -308,8 +308,8 @@ startsWith(const std::string& str,
 }
 
 static bool
-endsWith(const std::string &str,
-         const std::string &suffix)
+endsWith(const std::string& str,
+         const std::string& suffix)
 {
     return ( ( str.size() >= suffix.size() ) &&
              (str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0) );
@@ -392,7 +392,7 @@ getFilesFromDir(tinydir_dir& dir,
  */
 static bool
 numberMatchDigits(int digitsCount,
-                  const std::string number,
+                  const std::string& number,
                   int *frameNumber)
 {
     *frameNumber = stringToInt(number);
@@ -791,8 +791,6 @@ struct FileNameContentPrivate
         , leadingZeroes(0)
     {
     }
-
-    void parse(const std::string& absoluteFileName);
 };
 
 
@@ -800,8 +798,8 @@ FileNameContent::FileNameContent(const std::string& absoluteFilename)
     : _imp( new FileNameContentPrivate() )
 
 {
-    _imp->absoluteFileName = absoluteFileName;
-    _imp->filename = absoluteFileName;
+    _imp->absoluteFileName = absoluteFilename;
+    _imp->filename = absoluteFilename;
     _imp->filePath = removePath(_imp->filename);
     std::locale loc;
     std::string lastNumberStr;
@@ -827,7 +825,7 @@ FileNameContent::FileNameContent(const std::string& absoluteFilename)
 
     if ( !lastNumberStr.empty() ) {
         _imp->orderedElements.push_back( FileNameElement(lastNumberStr, FileNameElement::FRAME_NUMBER) );
-        _imp->leadingZeroes = getLeadingZeroes(lastNumberStr);     //< take into account only the last FRAME_NUMBER
+        _imp->leadingZeroes = countLeadingZeroes(lastNumberStr);     //< take into account only the last FRAME_NUMBER
         lastNumberStr.clear();
     }
     if ( !lastTextPart.empty() ) {
@@ -836,11 +834,11 @@ FileNameContent::FileNameContent(const std::string& absoluteFilename)
     }
 
     // extension is everything after the last '.'
-    size_t lastDotPos = filename.find_last_of('.');
+    size_t lastDotPos = _imp->filename.find_last_of('.');
     if (lastDotPos == std::string::npos) {
         _imp->extension.clear();
     } else {
-        _imp->extension = filename.substr(lastDotPos + 1);
+        _imp->extension = _imp->filename.substr(lastDotPos + 1);
     }
 }
 
