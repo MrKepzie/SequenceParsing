@@ -55,14 +55,21 @@
 #define NATRON_DIALOG_MAX_SEQUENCES_HOLE 1000
 
 using std::size_t;
+using std::map;
+using std::string;
+using std::stringstream;
+using std::wstring;
+using std::vector;
+using std::pair;
+using std::make_pair;
 
 namespace  {
 
 #ifdef _WIN32
-static std::wstring
-utf8_to_utf16(const std::string& str)
+static wstring
+utf8_to_utf16(const string& str)
 {
-    std::wstring native;
+    wstring native;
 
     native.resize( MultiByteToWideChar (CP_UTF8, 0, str.data(), str.length(), NULL, 0) );
     MultiByteToWideChar ( CP_UTF8, 0, str.data(), str.length(), &native[0], (int)native.size() );
@@ -74,10 +81,10 @@ utf8_to_utf16(const std::string& str)
 
 
 static std::size_t
-getFileSize(const std::string& filename)
+getFileSize(const string& filename)
 {
 #ifdef _WIN32
-    std::wstring wfilename = utf8_to_utf16(filename);
+    wstring wfilename = utf8_to_utf16(filename);
     LARGE_INTEGER file_size = { 0 };
 
     /*
@@ -184,16 +191,16 @@ typedef std::basic_string<char, ci_char_traits> ci_string;
  * were found before this variable.
  **/
 static bool
-extractCommonPartsAndVariablesFromPattern(const std::string& patternUnPathedWithoutExt,
-                                          const std::string& patternExtension,
+extractCommonPartsAndVariablesFromPattern(const string& patternUnPathedWithoutExt,
+                                          const string& patternExtension,
                                           StringList* commonParts,
-                                          std::vector<std::pair<std::string, int> >* variablesByOrder)
+                                          vector<pair<string, int> >* variablesByOrder)
 {
     bool inPrintfLikeArg = false;
     int printfLikeArgIndex = 0;
 
-    std::string commonPart;
-    std::string variable;
+    string commonPart;
+    string variable;
     int commonCharactersFound = 0;
     bool previousCharIsSharp = false;
     for (int i = 0; i < (int)patternUnPathedWithoutExt.size(); ++i) {
@@ -205,7 +212,7 @@ extractCommonPartsAndVariablesFromPattern(const std::string& patternUnPathedWith
                 commonPart.clear();
             }
             if ( !previousCharIsSharp && !variable.empty() ) {
-                variablesByOrder->push_back( std::make_pair(variable, commonCharactersFound) );
+                variablesByOrder->push_back( make_pair(variable, commonCharactersFound) );
                 variable.clear();
             }
             variable.push_back(c);
@@ -240,7 +247,7 @@ extractCommonPartsAndVariablesFromPattern(const std::string& patternUnPathedWith
                     commonPart.clear();
                 }
                 if ( !variable.empty() ) {
-                    variablesByOrder->push_back( std::make_pair(variable, commonCharactersFound) );
+                    variablesByOrder->push_back( make_pair(variable, commonCharactersFound) );
                     variable.clear();
                 }
                 variable.push_back(c);
@@ -249,7 +256,7 @@ extractCommonPartsAndVariablesFromPattern(const std::string& patternUnPathedWith
             inPrintfLikeArg = false;
             assert( !variable.empty() );
             variable.push_back(c);
-            variablesByOrder->push_back( std::make_pair(variable, commonCharactersFound) );
+            variablesByOrder->push_back( make_pair(variable, commonCharactersFound) );
             variable.clear();
         } else if (inPrintfLikeArg) {
             ++printfLikeArgIndex;
@@ -267,7 +274,7 @@ extractCommonPartsAndVariablesFromPattern(const std::string& patternUnPathedWith
         } else {
             commonPart.push_back(c);
             if ( !variable.empty() ) {
-                variablesByOrder->push_back( std::make_pair(variable, commonCharactersFound) );
+                variablesByOrder->push_back( make_pair(variable, commonCharactersFound) );
                 variable.clear();
             }
         }
@@ -278,19 +285,19 @@ extractCommonPartsAndVariablesFromPattern(const std::string& patternUnPathedWith
         commonCharactersFound += commonPart.size();
     }
     if ( !variable.empty() ) {
-        variablesByOrder->push_back( std::make_pair(variable, commonCharactersFound) );
+        variablesByOrder->push_back( make_pair(variable, commonCharactersFound) );
     }
 
     if ( !patternExtension.empty() ) {
-        commonParts->push_back( std::string('.' + patternExtension) );
+        commonParts->push_back( string('.' + patternExtension) );
     }
 
     return true;
 } // extractCommonPartsAndVariablesFromPattern
 
 static size_t
-findStr(const std::string& from,
-        const std::string& toSearch,
+findStr(const string& from,
+        const string& toSearch,
         int pos)
 {
     return from.find(toSearch, pos);
@@ -299,8 +306,8 @@ findStr(const std::string& from,
 }
 
 static bool
-startsWith(const std::string& str,
-           const std::string& prefix)
+startsWith(const string& str,
+           const string& prefix)
 {
     return str.substr( 0, prefix.size() ) == prefix;
     // case insensitive version:
@@ -308,20 +315,20 @@ startsWith(const std::string& str,
 }
 
 static bool
-endsWith(const std::string& str,
-         const std::string& suffix)
+endsWith(const string& str,
+         const string& suffix)
 {
     return ( ( str.size() >= suffix.size() ) &&
              (str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0) );
 }
 
 static void
-removeAllOccurences(std::string& str,
-                    const std::string& toRemove)
+removeAllOccurences(string& str,
+                    const string& toRemove)
 {
     if ( str.size() ) {
         for ( size_t i = findStr(str, toRemove, 0);
-              i != std::string::npos;
+              i != string::npos;
               i = findStr(str, toRemove, i) ) {
             str.erase( i, toRemove.size() );
         }
@@ -329,9 +336,9 @@ removeAllOccurences(std::string& str,
 }
 
 static int
-stringToInt(const std::string& str)
+stringToInt(const string& str)
 {
-    //    std::stringstream ss(str);
+    //    stringstream ss(str);
     //    int ret = 0;
     //    try {
     //        ss >> ret;
@@ -343,24 +350,24 @@ stringToInt(const std::string& str)
     return std::atoi( str.c_str() );
 }
 
-static std::string
+static string
 stringFromInt(int nb)
 {
-    std::stringstream ss;
+    stringstream ss;
     ss << nb;
 
     return ss.str();
 }
 
-static std::string
-removeFileExtension(std::string& filename)
+static string
+removeFileExtension(string& filename)
 {
     size_t lastdot = filename.find_last_of(".");
 
-    if (lastdot == std::string::npos) {
+    if (lastdot == string::npos) {
         return "";
     }
-    std::string extension = filename.substr(lastdot + 1);
+    string extension = filename.substr(lastdot + 1);
     filename = filename.substr(0, lastdot);
 
     return extension;
@@ -375,7 +382,7 @@ getFilesFromDir(tinydir_dir& dir,
         tinydir_file file;
         int status = tinydir_readfile(&dir, &file);
         if ( ( status == 0) && !file.is_dir ) {
-            std::string filename(file.name);
+            string filename(file.name);
             if ( ( filename != ".") && ( filename != "..") ) {
                 ret->push_back(filename);
             }
@@ -392,7 +399,7 @@ getFilesFromDir(tinydir_dir& dir,
  */
 static bool
 numberMatchDigits(int digitsCount,
-                  const std::string& number,
+                  const string& number,
                   int *frameNumber)
 {
     assert(digitsCount > 0);
@@ -418,12 +425,12 @@ numberMatchDigits(int digitsCount,
 
 static bool
 matchesHashTag(int sharpCount,
-               const std::string& filename,
+               const string& filename,
                size_t startingPos,
                size_t *endPos,
                int* frameNumber)
 {
-    std::string variable;
+    string variable;
     size_t variableIt = startingPos;
     for (variableIt = startingPos;
          variableIt < filename.size() && std::isdigit(filename[variableIt]);
@@ -437,12 +444,12 @@ matchesHashTag(int sharpCount,
 
 static bool
 matchesPrintfLikeSyntax(int digitsCount,
-                        const std::string& filename,
+                        const string& filename,
                         size_t startingPos,
                         size_t *endPos,
                         int* frameNumber)
 {
-    std::string variable;
+    string variable;
     size_t variableIt;
     for (variableIt = startingPos;
          variableIt < filename.size() && std::isdigit(filename[variableIt]);
@@ -456,12 +463,12 @@ matchesPrintfLikeSyntax(int digitsCount,
 
 static bool
 matchesView(bool longView,
-            const std::string& filename,
+            const string& filename,
             size_t startingPos,
             size_t *endPos,
             int* viewNumber)
 {
-    std::string mid = filename.substr(startingPos);
+    string mid = filename.substr(startingPos);
     if (!longView) {
         if ( startsWith(mid, "r") ) {
             *viewNumber = 1;
@@ -474,7 +481,7 @@ matchesView(bool longView,
 
             return true;
         } else if ( startsWith(mid, "view") ) {
-            std::string viewNoStr;
+            string viewNoStr;
             for (size_t it = 4; it < mid.size() && std::isdigit(mid[it]); ++it) {
                 viewNoStr.push_back(mid[it]);
             }
@@ -501,7 +508,7 @@ matchesView(bool longView,
 
             return true;
         } else if ( startsWith(mid, "view") ) {
-            std::string viewNoStr;
+            string viewNoStr;
             for (size_t it = 4; it < mid.size() && std::isdigit(mid[it]); ++it) {
                 viewNoStr.push_back(mid[it]);
             }
@@ -521,9 +528,9 @@ matchesView(bool longView,
 } // matchesView
 
 static bool
-matchesPattern_v2(const std::string& filename,
-                  const std::string& pattern,
-                  const std::string& patternExtension,
+matchesPattern_v2(const string& filename,
+                  const string& pattern,
+                  const string& patternExtension,
                   int* frameNumber,
                   int* viewNumber)
 {
@@ -543,8 +550,8 @@ matchesPattern_v2(const std::string& filename,
     size_t patternIt = 0;
 
     ///make a copy of the filename from which we remove the file extension
-    std::string filenameCpy = filename;
-    std::string fileExt = removeFileExtension(filenameCpy);
+    string filenameCpy = filename;
+    string fileExt = removeFileExtension(filenameCpy);
 
     ///Extensions not matching, exit.
     if (fileExt != patternExtension) {     //
@@ -557,7 +564,7 @@ matchesPattern_v2(const std::string& filename,
         int sharpCount = 0;
 
         ///Actually start counting the #
-        std::string variable;
+        string variable;
         for (size_t sharpIt = patternIt;
              sharpIt < pattern.size() && pattern[sharpIt] == '#';
              ++sharpIt) {
@@ -583,7 +590,7 @@ matchesPattern_v2(const std::string& filename,
             ///We found the '%' digit, start at the character right after to
             ///find digits
             size_t printfIt;
-            std::string digitStr;
+            string digitStr;
             for (printfIt = patternIt + 1;
                  printfIt < pattern.size() && std::isdigit(pattern[printfIt]);
                  ++printfIt) {
@@ -715,7 +722,7 @@ matchesPattern_v2(const std::string& filename,
     return true;
 } // matchesPattern_v2
 
-static int countLeadingZeroes(const std::string& str)
+static int countLeadingZeroes(const string& str)
 {
     int ret = 0;
 
@@ -744,13 +751,13 @@ struct FileNameElement
 {
     enum Type { TEXT = 0, FRAME_NUMBER };
 
-    FileNameElement(const std::string& data,
+    FileNameElement(const string& data,
                     FileNameElement::Type type)
         : data(data)
         , type(type)
     {}
 
-    std::string data;
+    string data;
     Type type;
 };
 
@@ -759,12 +766,12 @@ struct FileNameElement
 struct FileNameContentPrivate
 {
     ///Ordered from left to right, these are the elements composing the filename without its path
-    std::vector<FileNameElement> orderedElements;
-    std::string absoluteFileName;
-    std::string filePath;     //!< the filepath
-    std::string filename;     //!< the filename without path
-    std::string extension;     //!< the file extension
-    std::string generatedPattern;
+    vector<FileNameElement> orderedElements;
+    string absoluteFileName;
+    string filePath;     //!< the filepath
+    string filename;     //!< the filename without path
+    string extension;     //!< the file extension
+    string generatedPattern;
     int leadingZeroes; //!< leading zeroes for the last number seen in the file path??? why store this?
 
     FileNameContentPrivate()
@@ -780,7 +787,7 @@ struct FileNameContentPrivate
 };
 
 
-FileNameContent::FileNameContent(const std::string& absoluteFilename)
+FileNameContent::FileNameContent(const string& absoluteFilename)
     : _imp( new FileNameContentPrivate() )
 
 {
@@ -788,8 +795,8 @@ FileNameContent::FileNameContent(const std::string& absoluteFilename)
     _imp->filename = absoluteFilename;
     _imp->filePath = removePath(_imp->filename);
     std::locale loc;
-    std::string lastNumberStr;
-    std::string lastTextPart;
+    string lastNumberStr;
+    string lastTextPart;
     for (size_t i = 0; i < _imp->filename.size(); ++i) {
         const char& c = _imp->filename[i];
         if ( std::isdigit(c, loc) ) {
@@ -821,7 +828,7 @@ FileNameContent::FileNameContent(const std::string& absoluteFilename)
 
     // extension is everything after the last '.'
     size_t lastDotPos = _imp->filename.find_last_of('.');
-    if (lastDotPos == std::string::npos) {
+    if (lastDotPos == string::npos) {
         _imp->extension.clear();
     } else {
         _imp->extension = _imp->filename.substr(lastDotPos + 1);
@@ -858,7 +865,7 @@ FileNameContent::getLeadingZeroes() const
 /**
  * @brief Returns the file path, e.g: /Users/Lala/Pictures/ with the trailing separator.
  **/
-const std::string&
+const string&
 FileNameContent::getPath() const
 {
     return _imp->filePath;
@@ -867,7 +874,7 @@ FileNameContent::getPath() const
 /**
  * @brief Returns the filename without its path.
  **/
-const std::string&
+const string&
 FileNameContent::fileName() const
 {
     return _imp->filename;
@@ -876,13 +883,13 @@ FileNameContent::fileName() const
 /**
  * @brief Returns the absolute filename as it was given in the constructor arguments.
  **/
-const std::string&
+const string&
 FileNameContent::absoluteFileName() const
 {
     return _imp->absoluteFileName;
 }
 
-const std::string&
+const string&
 FileNameContent::getExtension() const
 {
     return _imp->extension;
@@ -891,7 +898,7 @@ FileNameContent::getExtension() const
 /**
  * @brief Returns the file pattern found in the filename with hash characters style for frame number (i.e: ###)
  **/
-const std::string&
+const string&
 FileNameContent::getFilePattern(int numHashes) const
 {
     if ( _imp->generatedPattern.empty() ) {
@@ -904,7 +911,7 @@ FileNameContent::getFilePattern(int numHashes) const
                 _imp->generatedPattern.append(e.data);
                 break;
             case FileNameElement::FRAME_NUMBER: {
-                std::string hashStr;
+                string hashStr;
                 for (int c = 0; c < numHashes; ++c) {
                     hashStr.push_back('#');
                 }
@@ -929,7 +936,7 @@ FileNameContent::getFilePattern(int numHashes) const
  **/
 bool
 FileNameContent::getNumberByIndex(int index,
-                                  std::string* numberString) const
+                                  string* numberString) const
 {
     int numbersElementsIndex = 0;
 
@@ -974,7 +981,7 @@ bool
 FileNameContent::matchesPattern(const FileNameContent& other,
                                 int* numberIndexToVary) const
 {
-    const std::vector<FileNameElement>& otherElements = other._imp->orderedElements;
+    const vector<FileNameElement>& otherElements = other._imp->orderedElements;
 
     if ( otherElements.size() != _imp->orderedElements.size() ) {
         return false;
@@ -1042,7 +1049,7 @@ FileNameContent::matchesPattern(const FileNameContent& other,
     //    ///find out in the potentialFrameNumbers what is the minimum with pairs and pick it up
     //    /// for example if 1 pair is : < 0001, 802398 > and the other pair is < 01 , 10 > we pick
     //    /// the second one.
-    //    std::vector<int> minIndexes;
+    //    vector<int> minIndexes;
     //    int minimum = INT_MAX;
     //    for (size_t i = 0; i < potentialFrameNumbers.size(); ++i) {
     //        int thisNumber = stringToInt(potentialFrameNumbers[i].second.first);
@@ -1066,16 +1073,16 @@ FileNameContent::matchesPattern(const FileNameContent& other,
 void
 FileNameContent::generatePatternWithFrameNumberAtIndex(int index,
                                                        int numHashes,
-                                                       std::string* pattern) const
+                                                       string* pattern) const
 {
     int numbersCount = 0;
     size_t lastNumberPos = 0;
 
-    std::string indexedPattern = getFilePattern(numHashes);
+    string indexedPattern = getFilePattern(numHashes);
     for (size_t i = 0; i < _imp->orderedElements.size(); ++i) {
         if (_imp->orderedElements[i].type == FileNameElement::FRAME_NUMBER) {
             lastNumberPos = findStr(indexedPattern, "#", 0);
-            assert(lastNumberPos != std::string::npos);
+            assert(lastNumberPos != string::npos);
 
             size_t endTagPos = lastNumberPos;
             while (endTagPos < indexedPattern.size() && indexedPattern[endTagPos] == '#') {
@@ -1106,47 +1113,47 @@ FileNameContent::generatePatternWithFrameNumberAtIndex(int index,
     *pattern = getPath() + indexedPattern;
 }
 
-std::string
-removePath(std::string& filename)
+string
+removePath(string& filename)
 {
     ///find the last separator
     size_t pos = filename.find_last_of('/');
 
-    if (pos == std::string::npos) {
+    if (pos == string::npos) {
         //try out \\ char
         pos = filename.find_last_of('\\');
     }
-    if (pos == std::string::npos) {
+    if (pos == string::npos) {
         ///couldn't find a path
         return "";
     }
-    std::string path = filename.substr(0, pos + 1);  // + 1 to include the trailing separator
+    string path = filename.substr(0, pos + 1);  // + 1 to include the trailing separator
     removeAllOccurences(filename, path);
 
     return path;
 }
 
 bool
-filesListFromPattern_fast(const std::string& pattern,
+filesListFromPattern_fast(const string& pattern,
                           const StringList &files,
                           SequenceParsing::SequenceFromPattern* sequence)
 {
     if ( pattern.empty() ) {
         return false;
     }
-    std::string patternUnPathed = pattern;
-    std::string patternPath = removePath(patternUnPathed);
-    std::string patternExtension = removeFileExtension(patternUnPathed);
+    string patternUnPathed = pattern;
+    string patternPath = removePath(patternUnPathed);
+    string patternExtension = removeFileExtension(patternUnPathed);
 
     for (size_t i = 0; i < files.size(); ++i) {
         int frameNumber;
         int viewNumber;
         if ( matchesPattern_v2(files[i], patternUnPathed, patternExtension, &frameNumber, &viewNumber) ) {
             SequenceFromPattern::iterator it = sequence->find(frameNumber);
-            std::string absoluteFileName = patternPath + files[i];
+            string absoluteFileName = patternPath + files[i];
             if ( it != sequence->end() ) {
-                std::pair<std::map<int, std::string>::iterator, bool> ret =
-                    it->second.insert( std::make_pair(viewNumber, absoluteFileName) );
+                pair<map<int, string>::iterator, bool> ret =
+                    it->second.insert( make_pair(viewNumber, absoluteFileName) );
                 if (!ret.second) {
 #                 ifdef DEBUG
                     std::cerr << "There was an issue populating the file sequence. Several files with the same frame number"
@@ -1154,9 +1161,9 @@ filesListFromPattern_fast(const std::string& pattern,
 #                 endif
                 }
             } else {
-                std::map<int, std::string> viewsMap;
-                viewsMap.insert( std::make_pair(viewNumber, absoluteFileName) );
-                sequence->insert( std::make_pair(frameNumber, viewsMap) );
+                map<int, string> viewsMap;
+                viewsMap.insert( make_pair(viewNumber, absoluteFileName) );
+                sequence->insert( make_pair(frameNumber, viewsMap) );
             }
         }
     }
@@ -1165,15 +1172,15 @@ filesListFromPattern_fast(const std::string& pattern,
 }
 
 bool
-filesListFromPattern_slow(const std::string& pattern,
+filesListFromPattern_slow(const string& pattern,
                           SequenceParsing::SequenceFromPattern* sequence)
 {
     if ( pattern.empty() ) {
         return false;
     }
 
-    std::string patternUnPathed = pattern;
-    std::string patternPath = removePath(patternUnPathed);
+    string patternUnPathed = pattern;
+    string patternPath = removePath(patternUnPathed);
 
     tinydir_dir patternDir;
     if (tinydir_open( &patternDir, patternPath.c_str() ) == -1) {
@@ -1195,9 +1202,9 @@ sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPattern& seque
     StringList ret;
 
     for (SequenceParsing::SequenceFromPattern::const_iterator it = sequence.begin(); it != sequence.end(); ++it) {
-        const std::map<int, std::string>& views = it->second;
+        const map<int, string>& views = it->second;
 
-        for (std::map<int, std::string>::const_iterator it2 = views.begin(); it2 != views.end(); ++it2) {
+        for (map<int, string>::const_iterator it2 = views.begin(); it2 != views.end(); ++it2) {
             if ( ( onlyViewIndex != -1) && ( it2->first != onlyViewIndex) && ( it2->first != -1) ) {
                 continue;
             }
@@ -1208,15 +1215,15 @@ sequenceFromPatternToFilesList(const SequenceParsing::SequenceFromPattern& seque
     return ret;
 }
 
-std::string
-generateFileNameFromPattern(const std::string& pattern,
-                            const std::vector<std::string>& viewNames,
+string
+generateFileNameFromPattern(const string& pattern,
+                            const vector<string>& viewNames,
                             int frameNumber,
                             int viewNumber)
 {
-    std::string patternUnPathed = pattern;
-    std::string patternPath = removePath(patternUnPathed);
-    std::string patternExtension = removeFileExtension(patternUnPathed);
+    string patternUnPathed = pattern;
+    string patternPath = removePath(patternUnPathed);
+    string patternExtension = removeFileExtension(patternUnPathed);
 
     ///the pattern has no extension, switch the extension and the unpathed part
     if ( patternUnPathed.empty() ) {
@@ -1227,44 +1234,44 @@ generateFileNameFromPattern(const std::string& pattern,
     StringList commonPartsToFind;
     ///this list represents the variables ( ###  %04d %v etc...) found in the pattern ordered from left to right in the
     ///original string.
-    std::vector<std::pair<std::string, int> > variablesByOrder;
+    vector<pair<string, int> > variablesByOrder;
     extractCommonPartsAndVariablesFromPattern(pattern, patternExtension, &commonPartsToFind, &variablesByOrder);
 
-    std::string output = pattern;
-    size_t lastVariablePos = std::string::npos;
+    string output = pattern;
+    size_t lastVariablePos = string::npos;
     for (size_t i = 0; i < variablesByOrder.size(); ++i) {
-        const std::string& variable = variablesByOrder[i].first;
-        lastVariablePos = findStr(output, variable, lastVariablePos != std::string::npos ? lastVariablePos : 0);
+        const string& variable = variablesByOrder[i].first;
+        lastVariablePos = findStr(output, variable, lastVariablePos != string::npos ? lastVariablePos : 0);
 
         ///if we can't find the variable that means extractCommonPartsAndVariablesFromPattern is bugged.
-        assert(lastVariablePos != std::string::npos);
+        assert(lastVariablePos != string::npos);
 
-        if (variable.find_first_of('#') != std::string::npos) {
-            std::string frameNoStr = stringFromInt(frameNumber);
+        if (variable.find_first_of('#') != string::npos) {
+            string frameNoStr = stringFromInt(frameNumber);
             ///prepend with extra 0's
             while ( frameNoStr.size() < variable.size() ) {
                 frameNoStr.insert(0, 1, '0');
             }
             output.replace(lastVariablePos, variable.size(), frameNoStr);
-        } else if (variable.find("%v") != std::string::npos) {
-            std::string viewNumberStr;
+        } else if (variable.find("%v") != string::npos) {
+            string viewNumberStr;
             if ( ( viewNumber >= 0) && ( viewNumber < (int)viewNames.size() ) ) {
                 viewNumberStr.push_back( std::toupper(viewNames[viewNumber][0]) );
             }
 
 
             output.replace(lastVariablePos, variable.size(), viewNumberStr);
-        } else if (variable.find("%V") != std::string::npos) {
+        } else if (variable.find("%V") != string::npos) {
             if ( ( viewNumber >= 0) && ( viewNumber < (int)viewNames.size() ) ) {
-                const std::string& viewNumberStr = viewNames[viewNumber];
+                const string& viewNumberStr = viewNames[viewNumber];
                 output.replace(lastVariablePos, variable.size(), viewNumberStr);
             }
         } else if ( startsWith(variable, "%0") && endsWith(variable, "d") ) {
-            std::string digitsCountStr = variable;
+            string digitsCountStr = variable;
             removeAllOccurences(digitsCountStr, "%0");
             removeAllOccurences(digitsCountStr, "d");
             int digitsCount = stringToInt(digitsCountStr);
-            std::string frameNoStr = stringFromInt(frameNumber);
+            string frameNoStr = stringFromInt(frameNumber);
             //prepend with extra 0's
             while ( (int)frameNoStr.size() < digitsCount ) {
                 frameNoStr.insert(0, 1, '0');
@@ -1283,7 +1290,7 @@ generateFileNameFromPattern(const std::string& pattern,
 struct SequenceFromFilesPrivate
 {
     ///all the files mapped to their index
-    std::map<int, FileNameContent> filesMap;
+    map<int, FileNameContent> filesMap;
 
     /// The index of the frame number string in case there're several numbers in a filename.
     int frameNumberStringIndex;
@@ -1344,14 +1351,14 @@ SequenceFromFiles::tryInsertFile(const FileNameContent& file,
 {
     if ( _imp->filesMap.empty() ) {
         ///Special case when the sequence is empty, we don't have anything to match against.
-        std::string frameNumberStr;
+        string frameNumberStr;
         _imp->frameNumberStringIndex = file.getPotentialFrameNumbersCount() - 1;
         int frameNumber = -1;
         bool ok = file.getNumberByIndex(_imp->frameNumberStringIndex, &frameNumberStr);
         if (ok) {
             frameNumber = stringToInt(frameNumberStr);
         }
-        _imp->filesMap.insert( std::make_pair(frameNumber, file) );
+        _imp->filesMap.insert( make_pair(frameNumber, file) );
 
         _imp->minNumHashes = (int)frameNumberStr.size();
 
@@ -1380,11 +1387,11 @@ SequenceFromFiles::tryInsertFile(const FileNameContent& file,
         if (frameNumberIndex == _imp->frameNumberStringIndex) {
             insert = true;
 
-            std::string frameNumberStr;
+            string frameNumberStr;
             bool ok = file.getNumberByIndex(_imp->frameNumberStringIndex, &frameNumberStr);
             if (ok) {
-                std::pair<std::map<int, FileNameContent>::iterator, bool> success =
-                    _imp->filesMap.insert( std::make_pair(stringToInt(frameNumberStr), file) );
+                pair<map<int, FileNameContent>::iterator, bool> success =
+                    _imp->filesMap.insert( make_pair(stringToInt(frameNumberStr), file) );
 
                 ///Insert might have failed because we didn't check prior to this whether the file was already
                 ///present or not.
@@ -1405,9 +1412,9 @@ SequenceFromFiles::tryInsertFile(const FileNameContent& file,
 } // SequenceFromFiles::tryInsertFile
 
 bool
-SequenceFromFiles::contains(const std::string& absoluteFileName) const
+SequenceFromFiles::contains(const string& absoluteFileName) const
 {
-    for (std::map <int, FileNameContent >::const_iterator it = _imp->filesMap.begin(); it != _imp->filesMap.end(); ++it) {
+    for (map <int, FileNameContent >::const_iterator it = _imp->filesMap.begin(); it != _imp->filesMap.end(); ++it) {
         if (it->second.absoluteFileName() == absoluteFileName) {
             return true;
         }
@@ -1450,14 +1457,14 @@ SequenceFromFiles::getLastFrame() const
     if ( _imp->filesMap.empty() ) {
         return INT_MAX;
     } else {
-        std::map<int, FileNameContent>::const_iterator it = _imp->filesMap.end();
+        map<int, FileNameContent>::const_iterator it = _imp->filesMap.end();
         --it;
 
         return it->first;
     }
 }
 
-const std::map<int, FileNameContent>&
+const map<int, FileNameContent>&
 SequenceFromFiles::getFrameIndexes() const
 {
     return _imp->filesMap;
@@ -1469,7 +1476,7 @@ SequenceFromFiles::getEstimatedTotalSize() const
     return _imp->totalSize;
 }
 
-std::string
+string
 SequenceFromFiles::generateValidSequencePattern() const
 {
     if ( empty() ) {
@@ -1479,7 +1486,7 @@ SequenceFromFiles::generateValidSequencePattern() const
         return _imp->filesMap.begin()->second.absoluteFileName();
     }
     assert(_imp->filesMap.size() >= 2);
-    std::string firstFramePattern;
+    string firstFramePattern;
     _imp->filesMap.begin()->second.generatePatternWithFrameNumberAtIndex(_imp->frameNumberStringIndex,
                                                                          _imp->minNumHashes,
                                                                          &firstFramePattern);
@@ -1487,16 +1494,16 @@ SequenceFromFiles::generateValidSequencePattern() const
     return firstFramePattern;
 }
 
-std::string
-SequenceFromFiles::generateUserFriendlySequencePatternFromValidPattern(const std::string& validPattern) const
+string
+SequenceFromFiles::generateUserFriendlySequencePatternFromValidPattern(const string& validPattern) const
 {
     assert( !isSingleFile() );
-    std::string pattern = validPattern;
-    std::vector< std::pair<int, int> > chunks;
+    string pattern = validPattern;
+    vector< pair<int, int> > chunks;
     //int first = getFirstFrame();
-    std::map<int, FileNameContent>::const_iterator first = _imp->filesMap.begin();
-    std::map<int, FileNameContent>::const_iterator cur = first;
-    std::map<int, FileNameContent>::const_iterator next = first;
+    map<int, FileNameContent>::const_iterator first = _imp->filesMap.begin();
+    map<int, FileNameContent>::const_iterator cur = first;
+    map<int, FileNameContent>::const_iterator next = first;
     if ( next != _imp->filesMap.end() ) {
         ++next;
     }
@@ -1511,7 +1518,7 @@ SequenceFromFiles::generateUserFriendlySequencePatternFromValidPattern(const std
             }
             ++breakCounter;
         }
-        chunks.push_back( std::make_pair(first->first, cur->first) );
+        chunks.push_back( make_pair(first->first, cur->first) );
         first = next;
         if ( next != _imp->filesMap.end() ) {
             ++next;
@@ -1546,35 +1553,35 @@ SequenceFromFiles::generateUserFriendlySequencePatternFromValidPattern(const std
     return pattern;
 } // SequenceFromFiles::generateUserFriendlySequencePatternFromValidPattern
 
-std::string
+string
 SequenceFromFiles::generateUserFriendlySequencePattern() const
 {
     if ( isSingleFile() ) {
         return _imp->filesMap.begin()->second.fileName();
     }
-    std::string pattern = generateValidSequencePattern();
+    string pattern = generateValidSequencePattern();
     removePath(pattern);
 
     return generateUserFriendlySequencePatternFromValidPattern(pattern);
 }
 
-std::string
+string
 SequenceFromFiles::fileExtension() const
 {
     if ( !empty() ) {
         return _imp->filesMap.begin()->second.getExtension();
     } else {
-        return std::string();
+        return string();
     }
 }
 
-std::string
+string
 SequenceFromFiles::getPath() const
 {
     if ( !empty() ) {
         return _imp->filesMap.begin()->second.getPath();
     } else {
-        return std::string();
+        return string();
     }
 }
 } // namespace SequenceParsing
