@@ -26,8 +26,17 @@
 #include <string>
 #include <memory>
 
-typedef std::vector<std::string> StringList;
 namespace SequenceParsing {
+
+#if __cplusplus >= 201103L
+template <typename T>
+using auto_ptr = std::unique_ptr<T>;
+#else
+using std::auto_ptr;
+#endif
+
+typedef std::vector<std::string> StringList;
+
 /**
  * @brief A class representing the content of a filename.
  * Initialize it passing it a real filename and it will initialize the data structures
@@ -121,7 +130,7 @@ public:
     bool matchesPattern(const FileNameContent& other, int* numberIndexToVary) const;
 
 private:
-    std::auto_ptr<FileNameContentPrivate> _imp; // PImpl
+    auto_ptr<FileNameContentPrivate> _imp; // PImpl
 };
 
 /**
@@ -271,7 +280,7 @@ public:
     std::string generateUserFriendlySequencePatternFromValidPattern(const std::string& pattern) const;
 
 private:
-    std::auto_ptr<SequenceFromFilesPrivate> _imp; // PImpl
+    auto_ptr<SequenceFromFilesPrivate> _imp; // PImpl
 };
 } //namespace SequenceParsing
 
