@@ -63,6 +63,8 @@ using std::vector;
 using std::pair;
 using std::make_pair;
 
+using namespace SequenceParsing;
+
 namespace  {
 
 #ifdef _WIN32
